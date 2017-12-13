@@ -1,16 +1,19 @@
-###########################################################################################
+//////////////////////////////////////////////////////////////////////////////////////////////
 
-##		This WDL script performs alignment using BWA Mem		##
+/**       This Nextflow script implements GATK pipeline with Haplotype Caller              **/
 
-##				Script Options
-##	-t	"Number of Threads"					(Optional)
-##	-M	"Mark shorter split hits as secondary"			(Optional)	
-##	-k	"Minimun Seed Length"					(Optional) 
-##	-I	"The input is in the Illumina 1.3+ read format"		(Optional) 
-##	-R 	"Complete read group header line"			(Optional) 
+/* 				Functions Included			
+*	bwa mem 
+*	samtools view	
+*	samtools sort
+*	Picard 
+*	targetCreator
+*	indelRealigner
+*	baseRecalibrator
+*	printReads
+*	haplotypeCaller      								 */
 
-///////////////////////////////////////////////////////////////////////////////////////////
-###########################################################################################
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 
 // This is the basic genotyping workflow following GATK best practices, using HaplotypeCaller
@@ -93,17 +96,19 @@ manyFiles = file(params.sampleInfo)
 
 
 
+/** create a channel that parses input sample file, reads each line, and splits it by the tab character  **/
 
-
-inputFiles = Channel /** create a channel that parses input sample file, reads each line, and splits it by the tab character  **/
-                .fromPath("/projects/bioinformatics/Cynthia_TestData/Nextflow/manyFiles.txt") //define file path to read from
+inputFiles = Channel
+		//define file path to read from
+                .fromPath("/projects/bioinformatics/Cynthia_TestData/Nextflow/manyFiles.txt") 
                 .splitText() // split by line
                 .splitCsv(sep: "\t") //split line by tab character
 
 process alignReads { //perform bwa mem alignment on sample reads
 
 	input:
-	set val(name), file(read1), file(read2) from inputFiles //for each name, file read1, file read2 emitted from inputFiles channel 	
+	//for each name, file read1, file read2 emitted from inputFiles channel
+	set val(name), file(read1), file(read2) from inputFiles 	
 	file fasta_ref //input reference files
 	file fasta_ref_fai
 	file fasta_ref_sa
