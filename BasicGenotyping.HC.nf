@@ -111,9 +111,11 @@ process alignReads { //perform bwa mem alignment on sample reads
 	file fasta_ref_ann
 	file fasta_ref_amb
 	file fasta_ref_pac
-	
+
+
+	// output read name and aligned sam file
 	output:
-	set val(name), file("${name}.aligned.sam") into alignedFiles // output read name and aligned sam file
+	set val(name), file("${name}.aligned.sam") into alignedFiles 
 
 	"""
 	module load /usr/local/apps/bioapps/modules/bwa/bwa-0.7.16
