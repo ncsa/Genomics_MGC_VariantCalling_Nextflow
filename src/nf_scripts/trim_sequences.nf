@@ -44,14 +44,12 @@ process TrimSequences {
       val TrimSeqScript           // Bash script that actually runs the trimming program
       val TrimEnvProfile 	  // File containing the environmental profile variables
 
-//   output:
+  output:
 //      file '${SampleName}.read1.trimmed.fq.gz' into trimmedFiles
 //      file '${SampleName}.read2.trimmed.fq.gz' into trimmedFiles
 
    script:
       """
-	echo InputRead1
-	echo InputRead2
       /bin/bash $TrimSeqScript -P $PairedEnd -l $InputRead1 -r $InputRead2 -s $SampleName -A $Adapters -C $CutAdapt -t $CutAdaptThreads -e $TrimEnvProfile $DebugMode
       """
 
