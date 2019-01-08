@@ -37,11 +37,12 @@ read -r -d '' DOCS << DOCS
                    -t 		<threads> 
                    -P 		paired-end reads (true/false)
                    -e		</path/to/env_profile_file>
-                   -d 		turn on debug mode 
+                   -D           </path/to/output_directory> 
+		   -d 		turn on debug mode 
 
  EXAMPLES:
  trim_sequences.sh -h
- trim_sequences.sh -s sample -l read1.fq -r read2.fq -A adapters.fa -C /path/to/cutadapt_directory -t 12 -P true -e /path/to/env_profile_file -d
+ trim_sequences.sh -s sample -l read1.fq -r read2.fq -A adapters.fa -C /path/to/cutadapt_directory -t 12 -P true -e /path/to/env_profile_file -D /path/to/output_directory -d
 
 #############################################################################
 
@@ -151,7 +152,7 @@ then
 	exit 1
 fi
 
-while getopts ":hl:r:A:C:t:P:s:e:d" OPT
+while getopts ":hl:r:A:C:t:P:s:e:D:d" OPT
 do
 	case ${OPT} in
 		h )  # Flag to display usage
@@ -193,6 +194,10 @@ do
 		d )  # Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d.
 			echo -e "\nDebug mode is ON.\n"
 			set -x
+			;;
+		D )  # Path to the output directory for output files
+			OUTPUT_DIRECTORY=${OPTARG}
+			checkArg
 			;;
                 \? )  # Check for unsupported flag, print usage and exit.
 			echo -e "\nInvalid option: -${OPTARG}\n\n${DOCS}\n"
@@ -244,6 +249,11 @@ if [[ -z ${ADAPTERS+x} ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Missing adapters file option: -A"
+fi
+if [[ -z ${OUTPUT_DIRECTORY+x} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing output directory option: -D"
 fi
 if [[ ! -s ${ADAPTERS} ]]  
 then
