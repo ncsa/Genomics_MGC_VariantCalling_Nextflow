@@ -6,8 +6,7 @@
 /*       -t        "Number of Threads"                         (Required)                  */
 /*       -b        "Input BAM File"                            (Required)                  */
 /*       -s        "Name of the sample"                        (Optional)                  */
-/*       -S        "Path to the Sentieon Tool"                 (Required)                  */
-/*       -O        "Directory for the Output"                  (Required)                  */ 
+/*       -S        "Path to the Sentieon Tool"                 (Required)                  */ 
 /*       -e        "Path to Environment Profile File"          (Required)                  */
 /* 	 -D 	   "Path to Output Directory"		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
