@@ -35,11 +35,12 @@ read -r -d '' DOCS << DOCS
                    -S           </path/to/sentieon> 
                    -t           <threads> 
                    -e           </path/to/env_profile_file>
+		   -D 		</path/to/output_directory>
                    -d           turn on debug mode
 
  EXAMPLES:
  dedup.sh -h
- dedup.sh -s sample -b aligned.sorted.bam -S /path/to/sentieon_directory -t 12 -e /path/to/env_profile_file -d
+ dedup.sh -s sample -b aligned.sorted.bam -S /path/to/sentieon_directory -t 12 -D /path/to/output_directory -e /path/to/env_profile_file -d
 
 #############################################################################
 
@@ -156,7 +157,7 @@ then
 fi
 
 ## Input and Output parameters
-while getopts ":hs:b:S:t:e:d" OPT
+while getopts ":hs:b:S:t:e:D:d" OPT
 do
         case ${OPT} in
                 h )  # Flag to display usage 
@@ -183,6 +184,11 @@ do
                         ENV_PROFILE=${OPTARG}
                         checkArg
                         ;;
+		 D )  # Path to output directory
+                        OUTPUT_DIRECTORY=${OPTARG}
+                        checkArg
+                        ;;
+
                 d )  # Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d
                         echo -e "\nDebug mode is ON.\n"
 			set -x
@@ -248,6 +254,16 @@ then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Sorted BAM index file ${INPUTBAM}.bai is empty or does not exist."
 fi
+if [[ -z ${OUTPUT_DIRECTORY+x} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing output directory option: -D"
+fi
+if [[ ! -d ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Input sorted BAM file ${OUTPUT_DIRECTORY} does not exist or is not a directory."
+fi
 if [[ -z ${SENTIEON+x} ]]
 then
         EXITCODE=1
@@ -310,7 +326,7 @@ logInfo "[SENTIEON] Locus Collector finished; starting Dedup."
 ## Dedup command (Note: optional --rmdup flag will remove duplicates; without, duplicates are marked but not removed)
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon Deduplication error. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${THR} -i ${INPUTBAM} --algo Dedup --score_info ${SCORETXT} --metrics ${DEDUPMETRICS} ${OUT} >> ${SAMPLE}.dedup_sentieon.log 2>&1
+${SENTIEON}/bin/sentieon driver -t ${THR} -i ${INPUTBAM} --algo Dedup --score_info ${SCORETXT} --metrics ${DEDUPMETRICS} ${OUTPUT_DIRECTORY}/${OUT} >> ${SAMPLE}.dedup_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 
@@ -331,19 +347,19 @@ logInfo "[SENTIEON] Deduplication Finished. Deduplicated BAM found at ${OUT}"
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Check for creation of output BAM and index. Open read permissions to the user group
-if [[ ! -s ${OUT} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT} ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Output deduplicated BAM file ${OUT} is empty."
 fi
-if [[ ! -s ${OUTBAMIDX} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUTBAMIDX} ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Output deduplicated BAM index file ${OUTBAMIDX} is empty."
 fi
 
-chmod g+r ${OUT}
-chmod g+r ${OUTBAMIDX}
+chmod g+r ${OUTPUT_DIRECTORY}/${OUT}
+chmod g+r ${OUTPUT_DIRECTORY}/${OUTBAMIDX}
 chmod g+r ${DEDUPMETRICS}
 chmod g+r ${SCORETXT}
 

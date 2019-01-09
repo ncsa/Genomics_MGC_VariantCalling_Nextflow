@@ -359,7 +359,7 @@ then
 	# Trim single-end reads
 	TRAP_LINE=$(($LINENO + 1))
 	trap 'logError " $0 stopped at line ${TRAP_LINE}. Cutadapt Read 1 failure. " ' INT TERM EXIT
-	${CUTADAPT}/cutadapt -a file:${ADAPTERS} --cores=${THR} -o ${OUT1} ${INPUT1} >> ${SAMPLE}.cutadapt.log 2>&1
+	${CUTADAPT}/cutadapt -a file:${ADAPTERS} --cores=${THR} -o${OUTPUT_DIRECTORY}/${OUT1} ${INPUT1} >> ${SAMPLE}.cutadapt.log 2>&1
 	EXITCODE=$?  # Capture exit code
 	trap - INT TERM EXIT
 
@@ -372,7 +372,7 @@ else
 	# Trimming reads with Cutadapt in paired-end mode. -a and -A specify forward and reverse adapters, respectively. -p specifies output for read2 
 	TRAP_LINE=$(($LINENO + 1))
 	trap 'logError " $0 stopped at line ${TRAP_LINE}. Cutadapt Read 1 and 2 failure. " ' INT TERM EXIT
-	${CUTADAPT}/cutadapt -a file:${ADAPTERS} -A file:${ADAPTERS} --cores=${THR} -p ${OUT2} -o ${OUT1} ${INPUT1} ${INPUT2} >> ${SAMPLE}.cutadapt.log 2>&1
+	${CUTADAPT}/cutadapt -a file:${ADAPTERS} -A file:${ADAPTERS} --cores=${THR} -p ${OUTPUT_DIRECTORY}/${OUT2} -o ${OUTPUT_DIRECTORY}/${OUT1} ${INPUT1} ${INPUT2} >> ${SAMPLE}.cutadapt.log 2>&1
 	EXITCODE=$?
 	trap - INT TERM EXIT
 
@@ -395,14 +395,14 @@ fi
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Check for file creation
-if [[ ! -s ${OUT1} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT1} ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Output trimmed read 1 file ${OUT1} is empty."
 fi
 if [[ "${IS_PAIRED_END}" == true ]]
 then
-	if [[ ! -s ${OUT2} ]]
+	if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT2} ]]
 	then
 		EXITCODE=1
 		logError "$0 stopped at line ${LINENO}. \nREASON=Output trimmed read 2 file ${OUT2} is empty."
@@ -412,10 +412,10 @@ fi
 ## Open read permissions to the user group
 if [[ "${IS_PAIRED_END}" == false ]]
 then
-	chmod g+r ${OUT1}
+	chmod g+r ${OUTPUT_DIRECTORY}/${OUT1}
 else
-	chmod g+r ${OUT1}
-	chmod g+r ${OUT2}
+	chmod g+r ${OUTPUT_DIRECTORY}/${OUT1}
+	chmod g+r ${OUTPUT_DIRECTORY}/${OUT2}
 fi
 
 logInfo "[CUTADAPT] Finished trimming adapter sequences."

@@ -42,11 +42,12 @@ read -r -d '' DOCS << DOCS
                    -t           <threads> 
                    -P		paired-end reads (true/false)
                    -e           </path/to/env_profile_file>
+		   -D 		</path/to/output_directory>
                    -d           turn on debug mode
 
  EXAMPLES:
  alignment.sh -h
- alignment.sh -g readgroup_ID -s sample -p platform -l read1.fq -r read2.fq -G reference.fa -K 10000000 -S /path/to/sentieon_directory -t 12 -P true -e /path/to/env_profile_file -d
+ alignment.sh -g readgroup_ID -s sample -p platform -l read1.fq -r read2.fq -G reference.fa -K 10000000 -S /path/to/sentieon_directory -t 12 -P true -e /path/to/env_profile_file -D /path/to/output_directory -d
 
  NOTE: To prevent different results due to thread count, set -K to 10000000 as recommended by the Sentieon manual.
 
@@ -163,7 +164,7 @@ then
 fi
 
 ## Input and Output parameters
-while getopts ":hg:s:p:l:r:G:K:S:t:P:e:d" OPT
+while getopts ":hg:s:p:l:r:G:K:S:t:P:e:D:d" OPT
 do
         case ${OPT} in
                 h )  # Flag to display usage
@@ -212,6 +213,10 @@ do
                         ;;
                 e )  # Path to file with environmental profile variables
                         ENV_PROFILE=${OPTARG}
+                        checkArg
+                        ;;
+		D )  # Path to file with environmental profile variables
+                        OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;
                 d )  # Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d
@@ -322,6 +327,16 @@ then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Reference genome file ${REFGEN} is empty or does not exist."
 fi
+if [[ -z ${OUTPUT_DIRECTORY+x} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing output directory option: -D"
+fi
+if [[ ! -d ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON= ${OUTPUT_DIRECTORY} does not exist or is not a directory."
+fi
 if [[ -z ${CHUNK_SIZE+x} ]]
 then
 	EXITCODE=1
@@ -391,7 +406,7 @@ if [[ "${IS_PAIRED_END}" == false ]] # Align single read to reference genome
 then
 	TRAP_LINE=$(($LINENO + 1))
 	trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon BWA-MEM error in read alignment. " ' INT TERM EXIT
-	${SENTIEON}/bin/bwa mem -M -R "@RG\tID:$GROUP\tSM:${SAMPLE}\tPL:${PLATFORM}" -K ${CHUNK_SIZE} -t ${THR} ${REFGEN} ${INPUT1} > ${OUT} 2>>${TOOL_LOG}
+	${SENTIEON}/bin/bwa mem -M -R "@RG\tID:$GROUP\tSM:${SAMPLE}\tPL:${PLATFORM}" -K ${CHUNK_SIZE} -t ${THR} ${REFGEN} ${INPUT1} > ${OUTPUT_DIRECTORY}/${OUT} 2>>${TOOL_LOG}
 	EXITCODE=$?  # Capture exit code
 	trap - INT TERM EXIT
 
@@ -402,7 +417,7 @@ then
 else # Paired-end reads aligned
 	TRAP_LINE=$(($LINENO + 1))
 	trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon BWA-MEM error in read alignment. " ' INT TERM EXIT
-	${SENTIEON}/bin/bwa mem -M -R "@RG\tID:$GROUP\tSM:${SAMPLE}\tPL:${PLATFORM}" -K ${CHUNK_SIZE} -t ${THR} ${REFGEN} ${INPUT1} ${INPUT2} > ${OUT} 2>>${TOOL_LOG} 
+	${SENTIEON}/bin/bwa mem -M -R "@RG\tID:$GROUP\tSM:${SAMPLE}\tPL:${PLATFORM}" -K ${CHUNK_SIZE} -t ${THR} ${REFGEN} ${INPUT1} ${INPUT2} > ${OUTPUT_DIRECTORY}/${OUT} 2>>${TOOL_LOG} 
 	EXITCODE=$?  # Capture exit code
 	trap - INT TERM EXIT
 
@@ -412,7 +427,7 @@ else # Paired-end reads aligned
 	fi
 fi
 
-if [[ ! -s ${OUT} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT} ]]
 then
 	EXITCODE=1
 	logError "$0 stopped at line ${LINENO}. \nREASON=Output SAM ${OUT} is empty."
@@ -436,7 +451,7 @@ logInfo "[SENTIEON] Converting SAM to BAM..."
 
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon BAM conversion and sorting error. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon util sort -t ${THR} --sam2bam -i ${OUT} -o ${SORTBAM} >> ${TOOL_LOG} 2>&1
+${SENTIEON}/bin/sentieon util sort -t ${THR} --sam2bam -i ${OUTPUT_DIRECTORY}/${OUT} -o ${OUTPUT_DIRECTORY}/${SORTBAM} >> ${TOOL_LOG} 2>&1
 EXITCODE=$?  # Capture exit code
 trap - INT TERM EXIT
 
@@ -457,24 +472,24 @@ logInfo "[SENTIEON] Converted output to BAM format and sorted."
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Check if BAM and index were created. Open read permissions to the user group
-if [[ ! -s ${SORTBAM} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${SORTBAM} ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Output sorted BAM ${SORTBAM} is empty."
 fi
-if [[ ! -s ${SORTBAMIDX} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${SORTBAMIDX} ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Output sorted BAM index ${SORTBAMIDX} is empty."
 fi
 
-chmod g+r ${OUT}
-chmod g+r ${SORTBAM}
-chmod g+r ${SORTBAMIDX}
+chmod g+r ${OUTPUT_DIRECTORY}/${OUT}
+chmod g+r ${OUTPUT_DIRECTORY}/${SORTBAM}
+chmod g+r ${OUTPUT_DIRECTORY}/${SORTBAMIDX}
 
 logInfo "[BWA-MEM] Finished alignment. Aligned reads found in BAM format at ${SORTBAM}."
 
-rm ${OUT}
+rm ${OUTPUT_DIRECTORY}/${OUT}
 
 #-------------------------------------------------------------------------------------------------------------------------------
 

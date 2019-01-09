@@ -14,6 +14,7 @@
 /*       -p        "Platform"                                  (Required)                  */
 /*       -K        "Chunk Size in Bases"                       (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
+/*	 -D 	   "Path to Output Directory" 		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -38,6 +39,7 @@ ChunkSize = params.ChunkSize
 SentieonThreads = params.SentieonThreads
 
 AlignmentScript = params.AlignmentScript
+AlignmentOutputDirectory = params.AlignmentOutputDirectory
 Sentieon = params.Sentieon
 
 DebugMode = params.DebugMode
@@ -63,6 +65,7 @@ process Alignment{
        val SentieonThreads
 
        val AlignmentScript      
+       val AlignmentOutputDirectory
        val Sentieon       
 
        val DebugMode
@@ -73,6 +76,6 @@ process Alignment{
 
    script:
        """
-       /bin/bash ${AlignmentScript} -P ${PairedEnd} -g ${Group} -l ${InputRead1} -r ${InputRead2} -s ${SampleName} -p ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -e ${AlignEnvProfile}  ${DebugMode} 
+       /bin/bash ${AlignmentScript} -P ${PairedEnd} -g ${Group} -l ${InputRead1} -r ${InputRead2} -s ${SampleName} -p ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -D ${AlignmentOutputDirectory} -e ${AlignEnvProfile}  ${DebugMode} 
        """
 }

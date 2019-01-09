@@ -9,6 +9,7 @@
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */
 /*       -O        "Directory for the Output"                  (Required)                  */ 
 /*       -e        "Path to Environment Profile File"          (Required)                  */
+/* 	 -D 	   "Path to Output Directory"		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -18,6 +19,7 @@ InputAlignedSortedBam = file(params.InputAlignedSortedBam)
 InputAlignedSortedBamBai = file(params.InputAlignedSortedBamBai)
 
 DedupEnvProfile = file(params.DedupEnvProfile)
+DedupOutputDirectory = params.DedupOutputDirectory
 
 SampleName = params.SampleName
 SentieonThreads = params.SentieonThreads
@@ -38,6 +40,7 @@ process Deduplication{
        val SentieonThreads
 
        val DedupScript      
+       val DedupOutputDirectory
        val Sentieon       
 
        val DebugMode
@@ -48,6 +51,6 @@ process Deduplication{
 
    script:
        """
-       /bin/bash ${DedupScript} -b ${InputAlignedSortedBam} -s ${SampleName} -S ${Sentieon} -t ${SentieonThreads} -e ${DedupEnvProfile}  ${DebugMode} 
+       /bin/bash ${DedupScript} -b ${InputAlignedSortedBam} -s ${SampleName} -S ${Sentieon} -t ${SentieonThreads} -D ${DedupOutputDirectory} -e ${DedupEnvProfile}  ${DebugMode} 
        """
 }
