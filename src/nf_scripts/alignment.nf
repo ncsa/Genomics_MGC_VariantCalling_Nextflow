@@ -27,8 +27,8 @@ RefBwt = file(params.RefBwt)
 RefPac = file(params.RefPac)
 RefSa = file(params.RefSa)
 
-InputRead1 = file(params.InputRead1)
-InputRead2 = file(params.InputRead2)
+TrimmedInputRead1 = file(params.TrimmedInputRead1)
+TrimmedInputRead2 = file(params.TrimmedInputRead2)
 AlignEnvProfile = file(params.AlignEnvProfile)
 
 SampleName = params.SampleName
@@ -53,8 +53,8 @@ process Alignment{
        file RefPac
        file RefSa
        
-       file InputRead1
-       file InputRead2
+       file TrimmedInputRead1
+       file TrimmedInputRead2
        file AlignEnvProfile      
 
        val SampleName
@@ -76,6 +76,6 @@ process Alignment{
 
    script:
        """
-       /bin/bash ${AlignmentScript} -P ${PairedEnd} -g ${Group} -l ${InputRead1} -r ${InputRead2} -s ${SampleName} -p ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -D ${AlignmentOutputDirectory} -e ${AlignEnvProfile}  ${DebugMode} 
+       /bin/bash ${AlignmentScript} -P ${PairedEnd} -g ${Group} -l ${TrimmedInputRead1} -r ${TrimmedInputRead2} -s ${SampleName} -p ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -D ${AlignmentOutputDirectory} -e ${AlignEnvProfile}  ${DebugMode} 
        """
 }
