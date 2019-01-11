@@ -37,11 +37,12 @@ read -r -d '' DOCS << DOCS
                    -S           </path/to/sentieon> 
                    -t           <threads> 
                    -e           </path/to/env_profile_file>
+		   -D 		</path/to/output/directory>
                    -d           turn on debug mode
 
  EXAMPLES:
  realignment.sh -h
- realignment.sh -s sample -b sorted.deduped.bam -G reference.fa -k known1.vcf,known2.vcf,...knownN.vcf -S /path/to/sentieon_directory -t 12 -e /path/to/env_profile_file -d
+ realignment.sh -s sample -b sorted.deduped.bam -G reference.fa -k known1.vcf,known2.vcf,...knownN.vcf -S /path/to/sentieon_directory -t 12 -e /path/to/env_profile_file -D /path/to/output_directory -d
 
 #############################################################################
 
@@ -158,7 +159,7 @@ then
 fi
 
 ## Input and Output parameters
-while getopts ":hs:b:G:k:S:t:e:d" OPT
+while getopts ":hs:b:G:k:S:t:e:D:d" OPT
 do
         case ${OPT} in
                 h )  # Flag to display usage
@@ -193,6 +194,11 @@ do
                         ENV_PROFILE=${OPTARG}
                         checkArg
                         ;;
+		D )  # Path to file with environmental profile variables
+                        OUTPUT_DIRECTORY=${OPTARG}
+                        checkArg
+                        ;;
+
                 d )  # Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d
 			echo -e "\nDebug mode is ON.\n"
 			set -x
@@ -268,6 +274,16 @@ then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Reference genome file ${REFGEN} is empty or does not exist."
 fi
+if [[ -z ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing output directory option: -D"
+fi
+if [[ ! -d ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON= ${OUTPUT_DIRECTORY} does not exist or is not a directory."
+fi
 if [[ -z ${KNOWN+x} ]]
 then
 	EXITCODE=1
@@ -322,7 +338,7 @@ logInfo "[Realigner] START. Realigning deduped BAM. Using known sites at ${KNOWN
 ## Sentieon Realigner command.
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon Realignment error. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${THR} -r ${REFGEN} -i ${INPUTBAM} --algo Realigner -k ${SPLITKNOWN} ${OUT} >> ${SAMPLE}.realign_sentieon.log 2>&1
+${SENTIEON}/bin/sentieon driver -t ${THR} -r ${REFGEN} -i ${INPUTBAM} --algo Realigner -k ${SPLITKNOWN} ${OUTPUT_DIRECTORY}/${OUT} >> ${SAMPLE}.realign_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 
@@ -343,18 +359,18 @@ logInfo "[Realigner] Realigned reads ${SAMPLE} to reference ${REFGEN}. Realigned
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Check for creation of realigned BAM and index. Open read permissions to the user group
-if [[ ! -s ${OUT} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT} ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Realigned BAM ${OUT} is empty."
 fi
-if [[ ! -s ${OUT}.bai ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT}.bai ]]
 then
 	EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Realigned BAM ${OUT}.bai is empty."
 fi
-chmod g+r ${OUT}
-chmod g+r ${OUT}.bai
+chmod g+r ${OUTPUT_DIRECTORY}/${OUT}
+chmod g+r ${OUTPUT_DIRECTORY}/${OUT}.bai
 #-------------------------------------------------------------------------------------------------------------------------------
 
 

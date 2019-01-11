@@ -10,6 +10,7 @@
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */
 /*       -k        "List of Known Sites"                       (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
+/* 	 -D 	   "Path to Output Directory"		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -28,6 +29,7 @@ SentieonThreads = params.SentieonThreads
 
 RealignmentScript = params.RealignmentScript
 RealignEnvProfile = file(params.RealignEnvProfile)
+RealignmentOutputDirectory = params.RealignmentOutputDirectory
 
 DebugMode = params.DebugMode
 
@@ -39,7 +41,8 @@ process Realignment{
 	file InputAlignedSortedDedupedBamBai       
 	file RealignEnvProfile
 	val RealignmentScript
-	
+	val RealignmentOutputDirectory
+
 	val SampleName
 	val RealignmentKnownSites
 	val SentieonThreads
@@ -53,6 +56,6 @@ process Realignment{
 
    script:
        """
-       /bin/bash ${RealignmentScript} -s ${SampleName} -b ${InputAlignedSortedDedupedBam} -G ${Ref} -k ${RealignmentKnownSites} -S ${Sentieon} -t ${SentieonThreads} -e ${RealignEnvProfile}  ${DebugMode}
+       /bin/bash ${RealignmentScript} -s ${SampleName} -b ${InputAlignedSortedDedupedBam} -G ${Ref} -k ${RealignmentKnownSites} -S ${Sentieon} -t ${SentieonThreads} -e ${RealignEnvProfile} -D ${RealignmentOutputDirectory}  ${DebugMode}
        """
 }
