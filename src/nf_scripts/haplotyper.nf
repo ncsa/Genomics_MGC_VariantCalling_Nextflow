@@ -11,6 +11,7 @@
 /*       -r        "Recal Data Table"                          (Required)                  */
 /*       -o        "Haplotyper Extra Options"                  (Required)                  */
 /*       -D        "Path to the DBSNP File"                    (Required)                  */
+/* 	 -O	   "Path to the Output Folder"		       (Required)		   */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
@@ -34,6 +35,7 @@ SentieonThreads = params.SentieonThreads
 
 HaplotyperScript = params.HaplotyperScript
 HaplotyperEnvProfile = file(params.HaplotyperEnvProfile)
+HaplotyperOutputDirectory = params.HaplotyperOutputDirectory
 
 DebugMode = params.DebugMode
 
@@ -49,7 +51,7 @@ process Haplotyping{
 	
 	file HaplotyperEnvProfile
 	val HaplotyperScript
-	
+	val HaplotyperOutputDirectory	
 
 	val SampleName
 	val SentieonThreads
@@ -64,6 +66,6 @@ process Haplotyping{
 
    script:
        """
-       /bin/bash ${HaplotyperScript} -s ${SampleName} -b ${InputAlignedSortedDedupedRealignedBam} -G ${Ref} -D ${DBSNP} -r ${RecalTable} -S ${Sentieon} -t ${SentieonThreads} -o ${HaplotyperFinalExtraOptions} -e ${HaplotyperEnvProfile}  ${DebugMode}
+       /bin/bash ${HaplotyperScript} -s ${SampleName} -b ${InputAlignedSortedDedupedRealignedBam} -G ${Ref} -D ${DBSNP} -r ${RecalTable} -S ${Sentieon} -t ${SentieonThreads} -O ${HaplotyperOutputDirectory} -o ${HaplotyperFinalExtraOptions} -e ${HaplotyperEnvProfile}  ${DebugMode}
        """
 }

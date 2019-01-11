@@ -40,12 +40,13 @@ read -r -d '' DOCS << DOCS
 		   -D	<dbsnp.vcf>
 		   -r	<recal_data.table>
 		   -o	<extra_haplotyper_options>
+		   -O 	</path/to/output_directory>
                    -e   </path/to/env_profile_file>
 		   -d   turn on debug mode
 
  EXAMPLES:
  Haplotyper.sh -h
- Haplotyper.sh -s sample -S /path/to/sentieon_directory -G reference.fa -t 12 -b sorted.deduped.realigned.recalibrated.bam -D dbsnp.vcf -r recal_data.table -o "'--emit_mode variant --gq_bands 1-60,60-99/19,99 --min_base_qual 10 --pcr_indel_model CONSERVATIVE --phasing 1 --ploidy 2 --prune_factor 2'" -e /path/to/env_profile_file -d 
+ Haplotyper.sh -s sample -S /path/to/sentieon_directory -G reference.fa -t 12 -b sorted.deduped.realigned.recalibrated.bam -D dbsnp.vcf -r recal_data.table -o "'--emit_mode variant --gq_bands 1-60,60-99/19,99 --min_base_qual 10 --pcr_indel_model CONSERVATIVE --phasing 1 --ploidy 2 --prune_factor 2'" -O /path/to/output_directory -e /path/to/env_profile_file -d 
 
 NOTE: In order for getops to read in a string arguments for -o (extra_haplotyper_options), the argument needs to be quoted with a double quote (") followed by a single quote ('). See the example above.
 ##########################################################################################################################################################
@@ -154,7 +155,7 @@ then
         exit 1
 fi
 
-while getopts ":hs:S:G:t:b:D:r:o:e:d" OPT
+while getopts ":hs:S:G:t:b:D:r:o:e:O:d" OPT
 do
 	case ${OPT} in 
 		h ) # flag to display help message
@@ -195,6 +196,10 @@ do
 			;;
                 e )  # Path to file with environmental profile variables
                         ENV_PROFILE=${OPTARG}
+                        checkArg
+                        ;;
+		O )  # Path to file with environmental profile variables
+                        OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;
 		d ) # Turn on debug mode. Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d
@@ -273,11 +278,25 @@ then
         logError "$0 stopped at line ${LINENO}. \nREASON=Missing reference genome option: -G"
 fi
 
-## Check if the reference file exits
+## Check if the reference file exists
 if [[ ! -s ${REF} ]]
 then
         EXITCODE=1
         logError "$0 stopped at line $LINENO. \nREASON=Reference genome file ${REF} is empty or does not exist."
+fi
+
+## Check if the output directory option was passed in.
+if [[ -z ${OUTPUT_DIRECTORY+x} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing output directory option: -O"
+fi
+
+## Check if the output directory exists
+if [[ ! -d ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line $LINENO. \nREASON=${OUTPUT_DIRECTORY} does not exist or is not a directory."
 fi
 
 ## Check if the input BAM option was passed in.
@@ -360,7 +379,7 @@ logInfo "[Haplotyper] START."
 #Execute Sentieon with the Haplotyper algorithm
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE}. Error in Sentieon Haplotyper. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${NTHREADS} -r ${REF} -i ${INPUTBAM} -q ${RECAL} --algo Haplotyper ${HAPLOTYPER_OPTIONS_PARSED} -d ${DBSNP} ${SAMPLE}.vcf >> ${SAMPLE}.haplotype_sentieon.log 2>&1
+${SENTIEON}/bin/sentieon driver -t ${NTHREADS} -r ${REF} -i ${INPUTBAM} -q ${RECAL} --algo Haplotyper ${HAPLOTYPER_OPTIONS_PARSED} -d ${DBSNP} ${OUTPUT_DIRECTORY}/${SAMPLE}.vcf >> ${SAMPLE}.haplotype_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 
@@ -383,17 +402,17 @@ logInfo "[Haplotyper] Finished running successfully. Output: ${SAMPLE}.vcf"
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Check for the creation of the output VCF file
-if [[ ! -s ${SAMPLE}.vcf ]] 
+if [[ ! -s ${OUTPUT_DIRECTORY}/${SAMPLE}.vcf ]] 
 then
 	EXITCODE=1
 	logError "$0 stopped at line $LINENO. \nREASON=Output VCF is empty."
 fi
 
 ## Open read permissions to the user group
-chmod g+r ${SAMPLE}.vcf
+chmod g+r ${OUTPUT_DIRECTORY}/${SAMPLE}.vcf
 
 ## Check for the creation of the output VCF index file 
-if [[ ! -s ${SAMPLE}.vcf.idx ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${SAMPLE}.vcf.idx ]]
 then
 	EXITCODE=1
 	logError "$0 stopped at line $LINENO. \nREASON=Output VCF index is empty."
@@ -401,7 +420,7 @@ fi
 
 
 ## Open read permissions to the user group
-chmod g+r ${SAMPLE}.vcf.idx
+chmod g+r ${OUTPUT_DIRECTORY}/${SAMPLE}.vcf.idx
 
 
 #-------------------------------------------------------------------------------------------------------------------------------
