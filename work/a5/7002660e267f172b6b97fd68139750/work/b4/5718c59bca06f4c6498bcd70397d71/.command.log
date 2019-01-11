@@ -1,0 +1,87 @@
+
+*******************************************
+/projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/bash_scripts/bqsr.sh
+called by: pburra2 on Fri Jan 11 11:12:04 CST 2019
+command line input: -s NextflowWorkflowPB -b NextflowWorkflowPB.aligned.sorted.deduped.realigned.bam -G Homo_sapiens_assembly38_chr20_21_22.fasta -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr20.vcf,/projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr21.vcf,/projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr22.vcf -S /usr/local/apps/bioapps/sentieon/sentieon-genomics-201711.02 -t 8 -e realign_env.txt -d
+*******************************************
+
+Debug mode is ON.
+
++ getopts :hs:S:G:t:b:k:e:d OPT
++ [[ -z x ]]
++ ERRLOG=NextflowWorkflowPB.bqsr.TBD.log
++ truncate -s 0 NextflowWorkflowPB.bqsr.TBD.log
++ truncate -s 0 NextflowWorkflowPB.bqsr_sentieon.log
++ echo '*******************************************
+/projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/bash_scripts/bqsr.sh
+called by: pburra2 on Fri Jan 11 11:12:04 CST 2019
+command line input: -s NextflowWorkflowPB -b NextflowWorkflowPB.aligned.sorted.deduped.realigned.bam -G Homo_sapiens_assembly38_chr20_21_22.fasta -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr20.vcf,/projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr21.vcf,/projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr22.vcf -S /usr/local/apps/bioapps/sentieon/sentieon-genomics-201711.02 -t 8 -e realign_env.txt -d
+*******************************************'
++ [[ ! -z x ]]
++ source realign_env.txt
+++ export SENTIEON_LICENSE=bwlm3.ncsa.illinois.edu:8989
+++ SENTIEON_LICENSE=bwlm3.ncsa.illinois.edu:8989
++ [[ -z x ]]
++ [[ ! -d /usr/local/apps/bioapps/sentieon/sentieon-genomics-201711.02 ]]
++ [[ -z x ]]
++ [[ -z x ]]
++ [[ ! -s Homo_sapiens_assembly38_chr20_21_22.fasta ]]
++ [[ -z x ]]
++ [[ ! -s NextflowWorkflowPB.aligned.sorted.deduped.realigned.bam ]]
++ [[ ! -s NextflowWorkflowPB.aligned.sorted.deduped.realigned.bam.bai ]]
++ [[ -z x ]]
+++ sed -e 's/,/ -k /g'
++ SPLITKNOWN='/projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr20.vcf -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr21.vcf -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr22.vcf'
++ logInfo '[bqsr] START. Performing bqsr on the input BAM to produce bqsr table.'
++ local LEVEL=INFO
++ local CODE=0
++ [[ ! -z '' ]]
+++ getDate
++++ date +%Y-%m-%dT%H:%M:%S%z
+++ echo 2019-01-11T11:12:04-0600
++ _logMsg '[2019-01-11T11:12:04-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] \t[bqsr] START. Performing bqsr on the input BAM to produce bqsr table.'
++ echo -e '[2019-01-11T11:12:04-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] \t[bqsr] START. Performing bqsr on the input BAM to produce bqsr table.'
+[2019-01-11T11:12:04-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] 	[bqsr] START. Performing bqsr on the input BAM to produce bqsr table.
++ [[ -n NextflowWorkflowPB.bqsr.TBD.log ]]
++ echo -e '[2019-01-11T11:12:04-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] \t[bqsr] START. Performing bqsr on the input BAM to produce bqsr table.'
++ sed -r 's/\\n//'
++ TRAP_LINE=340
++ trap 'logError " $0 stopped at line ${TRAP_LINE}. Error in bqsr Step1: Calculate required modification of the quality scores in the BAM. " ' INT TERM EXIT
++ /usr/local/apps/bioapps/sentieon/sentieon-genomics-201711.02/bin/sentieon driver -t 8 -r Homo_sapiens_assembly38_chr20_21_22.fasta -i NextflowWorkflowPB.aligned.sorted.deduped.realigned.bam --algo QualCal -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr20.vcf -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr21.vcf -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr22.vcf NextflowWorkflowPB.recal_data.table
++ EXITCODE=0
++ trap - INT TERM EXIT
++ [[ 0 -ne 0 ]]
++ TRAP_LINE=352
++ trap 'logError " $0 stopped at line ${TRAP_LINE}. Error in bqsr Step2: Apply the recalibration to calculate the post calibration data table and additionally apply the recalibration on the BAM file. " ' INT TERM EXIT
++ /usr/local/apps/bioapps/sentieon/sentieon-genomics-201711.02/bin/sentieon driver -t 8 -r Homo_sapiens_assembly38_chr20_21_22.fasta -i NextflowWorkflowPB.aligned.sorted.deduped.realigned.bam -q NextflowWorkflowPB.recal_data.table --algo QualCal -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr20.vcf -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr21.vcf -k /projects/bioinformatics/DataPacks/human/Hg38_chr20_21_22_simulated_data_Jan_2018/indels/Mills_and_1000G_gold_standard.indels.hg38.chr22.vcf NextflowWorkflowPB.recal_data.table.post
++ EXITCODE=0
++ trap - INT TERM EXIT
++ [[ 0 -ne 0 ]]
++ TRAP_LINE=364
++ trap 'logError " $0 stopped at line ${TRAP_LINE}. Error in bqsr Step3: Create data for plotting. " ' INT TERM EXIT
++ /usr/local/apps/bioapps/sentieon/sentieon-genomics-201711.02/bin/sentieon driver -t 8 --algo QualCal --plot --before NextflowWorkflowPB.recal_data.table --after NextflowWorkflowPB.recal_data.table.post NextflowWorkflowPB.recal.csv
++ EXITCODE=0
++ trap - INT TERM EXIT
++ [[ 0 -ne 0 ]]
++ TRAP_LINE=376
++ trap 'logError "$0 stopped at line ${TRAP_LINE}. Error in bqsr Step4: Plot the calibration data tables, both pre and post, into graphs in a pdf. " ' INT TERM EXIT
++ /usr/local/apps/bioapps/sentieon/sentieon-genomics-201711.02/bin/sentieon plot bqsr -o NextflowWorkflowPB.recal_plots.pdf NextflowWorkflowPB.recal.csv
++ EXITCODE=0
++ trap - INT TERM EXIT
++ [[ 0 -ne 0 ]]
++ logInfo '[bqsr] Finished running successfully for NextflowWorkflowPB'
++ local LEVEL=INFO
++ local CODE=0
++ [[ ! -z '' ]]
+++ getDate
++++ date +%Y-%m-%dT%H:%M:%S%z
+++ echo 2019-01-11T11:12:09-0600
++ _logMsg '[2019-01-11T11:12:09-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] \t[bqsr] Finished running successfully for NextflowWorkflowPB'
++ echo -e '[2019-01-11T11:12:09-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] \t[bqsr] Finished running successfully for NextflowWorkflowPB'
+[2019-01-11T11:12:09-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] 	[bqsr] Finished running successfully for NextflowWorkflowPB
++ [[ -n NextflowWorkflowPB.bqsr.TBD.log ]]
++ echo -e '[2019-01-11T11:12:09-0600] [INFO] [bqsr.sh] [TBD] [TBD] [0] \t[bqsr] Finished running successfully for NextflowWorkflowPB'
++ sed -r 's/\\n//'
++ [[ ! -s NextflowWorkflowPB.recal_data.table ]]
++ chmod g+r NextflowWorkflowPB.recal_data.table
++ exit 0

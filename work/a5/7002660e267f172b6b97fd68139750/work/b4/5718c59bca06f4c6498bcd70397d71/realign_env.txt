@@ -1,0 +1,1 @@
+/projects/bioinformatics/PrakruthiWork/env_files/realign_env.txt

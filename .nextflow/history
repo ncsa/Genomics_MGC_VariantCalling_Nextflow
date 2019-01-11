@@ -1,0 +1,1 @@
+2019-01-11 17:12:01	8.6s	elated_bose	OK	644d64fecd6d25e522e98109da2cb15c	ef7c43af-54a2-4941-b240-9ec2ec2470d6	nextflow run ../Genomics_MGC_VariantCalling_Nextflow/src/unit_tests/testBqsr.nf

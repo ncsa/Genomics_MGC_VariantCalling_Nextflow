@@ -9,7 +9,7 @@
 /*       -s        "Name of the sample"                        (Optional)                  */
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */
 /*       -k        "List of Known Sites"                       (Required)                  */
-/*       -D        "Path to the DBSNP File"                    (Required)                  */
+/*       -D        "Path to Output Directory"                  (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
@@ -29,6 +29,7 @@ SentieonThreads = params.SentieonThreads
 
 BQSRScript = params.BQSRScript
 BQSREnvProfile = file(params.BQSREnvProfile)
+BQSROutputDirectory = params.BQSROutputDirectory
 
 DebugMode = params.DebugMode
 
@@ -41,6 +42,7 @@ process BQSR{
 	file BQSREnvProfile
 	val BQSRScript
 	val BQSRKnownSites
+	val BQSROutputDirectory
 
 	val SampleName
 	val SentieonThreads
@@ -53,6 +55,6 @@ process BQSR{
 
    script:
        """
-       /bin/bash ${BQSRScript} -s ${SampleName} -b ${InputAlignedSortedDedupedRealignedBam} -G ${Ref} -k ${BQSRKnownSites} -S ${Sentieon} -t ${SentieonThreads} -e ${BQSREnvProfile}  ${DebugMode}
+       /bin/bash ${BQSRScript} -s ${SampleName} -b ${InputAlignedSortedDedupedRealignedBam} -G ${Ref} -k ${BQSRKnownSites} -D ${BQSROutputDirectory} -S ${Sentieon} -t ${SentieonThreads} -e ${BQSREnvProfile}  ${DebugMode}
        """
 }

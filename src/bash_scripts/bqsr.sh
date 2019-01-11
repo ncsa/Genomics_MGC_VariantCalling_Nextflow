@@ -36,12 +36,13 @@ read -r -d '' DOCS << DOCS
 	 -t 	<threads>
 	 -b 	<sorted.deduped.realigned.bam>
 	 -k 	<known_sites> (omni.vcf, hapmap.vcf, indels.vcf, dbSNP.vcf)
-         -e     </path/to/env_profile_file>
+         -D 	</path/to/output_directory>
+	 -e     </path/to/env_profile_file>
 	 -d	turn on debug mode	
 
  EXAMPLES:
  bqsr.sh -h
- bqsr.sh -s sample -S /path/to/sentieon_directory -G reference.fa -t 12 -b sorted.deduped.realigned.bam -k known1.vcf,known2.vcf,...knownN.vcf -e /path/to/env_profile_file -d 
+ bqsr.sh -s sample -S /path/to/sentieon_directory -G reference.fa -t 12 -b sorted.deduped.realigned.bam -D /path/to/output_directory -k known1.vcf,known2.vcf,...knownN.vcf -e /path/to/env_profile_file -d 
 
 ############################################################################################################################
 
@@ -155,7 +156,7 @@ then
 fi
 
 
-while getopts ":hs:S:G:t:b:k:e:d" OPT
+while getopts ":hs:S:G:t:b:k:e:D:d" OPT
 do
 	case ${OPT} in
 		h ) # flag to display help message
@@ -188,6 +189,10 @@ do
 			;;
                 e )  # Path to file with environmental profile variables
                         ENV_PROFILE=${OPTARG}
+                        checkArg
+                        ;;
+		D )  # Path to output directory
+                        OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;
 		d ) # Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d.
@@ -279,6 +284,21 @@ then
         logError "$0 stopped at line $LINENO. \nREASON=Reference genome file ${REF} is empty or does not exist."
 fi
 
+## Check if the reference option was passed in
+if [[ -z ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line $LINENO. \nREASON=Missing output directory option: -D"
+fi
+
+## Check if the reference fasta file is present.
+if [[ ! -d ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line $LINENO. \nREASON=${OUTPUT_DIRECTORY} does not exist or is not a directory."
+fi
+
+
 ## Check if the BAM input file option was passed in
 if [[ -z ${INPUTBAM+x} ]]
 then
@@ -338,7 +358,7 @@ logInfo "[bqsr] START. Performing bqsr on the input BAM to produce bqsr table."
 #Calculate required modification of the quality scores in the BAM
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE}. Error in bqsr Step1: Calculate required modification of the quality scores in the BAM. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${NTHREADS} -r ${REF} -i ${INPUTBAM} --algo QualCal -k ${SPLITKNOWN} ${SAMPLE}.recal_data.table >> ${SAMPLE}.bqsr_sentieon.log 2>&1
+${SENTIEON}/bin/sentieon driver -t ${NTHREADS} -r ${REF} -i ${INPUTBAM} --algo QualCal -k ${SPLITKNOWN} ${OUTPUT_DIRECTORY}/${SAMPLE}.recal_data.table >> ${SAMPLE}.bqsr_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 if [[ ${EXITCODE} -ne 0 ]]
@@ -350,7 +370,7 @@ fi
 #Apply the recalibration to calculate the post calibration data table and additionally apply the recalibration on the BAM file
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE}. Error in bqsr Step2: Apply the recalibration to calculate the post calibration data table and additionally apply the recalibration on the BAM file. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${NTHREADS} -r ${REF} -i ${INPUTBAM} -q ${SAMPLE}.recal_data.table --algo QualCal -k ${SPLITKNOWN} ${SAMPLE}.recal_data.table.post >> ${SAMPLE}.bqsr_sentieon.log 2>&1
+${SENTIEON}/bin/sentieon driver -t ${NTHREADS} -r ${REF} -i ${INPUTBAM} -q ${OUTPUT_DIRECTORY}/${SAMPLE}.recal_data.table --algo QualCal -k ${SPLITKNOWN} ${SAMPLE}.recal_data.table.post >> ${SAMPLE}.bqsr_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 if [[ ${EXITCODE} -ne 0 ]]
@@ -362,7 +382,7 @@ fi
 #Create data for plotting
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE}. Error in bqsr Step3: Create data for plotting. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${NTHREADS} --algo QualCal --plot --before ${SAMPLE}.recal_data.table --after ${SAMPLE}.recal_data.table.post ${SAMPLE}.recal.csv >> ${SAMPLE}.bqsr_sentieon.log 2>&1
+${SENTIEON}/bin/sentieon driver -t ${NTHREADS} --algo QualCal --plot --before ${OUTPUT_DIRECTORY}/${SAMPLE}.recal_data.table --after ${SAMPLE}.recal_data.table.post ${SAMPLE}.recal.csv >> ${SAMPLE}.bqsr_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 if [[ ${EXITCODE} -ne 0 ]]
@@ -394,13 +414,13 @@ logInfo "[bqsr] Finished running successfully for ${SAMPLE}"
 # Check for the creation of the recal_data.table necessary for input to Haplotyper. Open read permissions for the group.
 # The other files created in BQSR are not necessary for the workflow to run, so I am not performing checks on them.
 
-if [[ ! -s ${SAMPLE}.recal_data.table ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${SAMPLE}.recal_data.table ]]
 then
 	EXITCODE=1
-	logError "$0 stopped at line $LINENO. \nREASON=Recal data table ${SAMPLE}.recal_data.table is empty."
+	logError "$0 stopped at line $LINENO. \nREASON=Recal data table ${OUTPUT_DIRECTORY}/${SAMPLE}.recal_data.table is empty."
 fi
 
-chmod g+r ${SAMPLE}.recal_data.table
+chmod g+r ${OUTPUT_DIRECTORY}/${SAMPLE}.recal_data.table
 
 #-----------------------------------------------------------------------------------------------------------------------------------
 
