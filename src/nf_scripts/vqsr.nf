@@ -9,6 +9,7 @@
 /*       -s        "Name of the sample"                        (Required)                  */
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
+/* 	 -D 	   "Path to Output Directory"		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -31,6 +32,7 @@ SentieonThreads = params.SentieonThreads
 
 VqsrScript = params.VqsrScript
 VqsrEnvProfile = file(params.VqsrEnvProfile)
+VqsrOutputDirectory = params.VqsrOutputDirectory
 
 DebugMode = params.DebugMode
 
@@ -43,6 +45,7 @@ process Vqsr{
 	
 	file VqsrEnvProfile
 	val VqsrScript
+	val VqsrOutputDirectory
 
 	val VqsrSnpResourceString
 	String VqsrSnpResourceStringFinal = "\"" + VqsrSnpResourceString + "\""
@@ -62,6 +65,6 @@ process Vqsr{
 
    script:
        """
-       /bin/bash ${VqsrScript} -s ${SampleName} -V ${InputVCF} -G ${Ref} -r ${VqsrSnpResourceStringFinal} -R ${VqsrIndelResourceStringFinal} -a ${AnnotateTextFinal} -S ${Sentieon} -t ${SentieonThreads} -e ${VqsrEnvProfile}  ${DebugMode}
+       /bin/bash ${VqsrScript} -s ${SampleName} -V ${InputVCF} -G ${Ref} -r ${VqsrSnpResourceStringFinal} -R ${VqsrIndelResourceStringFinal} -a ${AnnotateTextFinal} -S ${Sentieon} -t ${SentieonThreads} -e ${VqsrEnvProfile} -D ${VqsrOutputDirectory} ${DebugMode}
        """
 }

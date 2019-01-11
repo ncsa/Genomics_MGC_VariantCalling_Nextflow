@@ -40,11 +40,12 @@ read -r -d '' DOCS << DOCS
 	 -R <resource_string_for_INDELS>
 	 -a <annotate_text_string>
          -e </path/to/env_profile_file>
+	 -D </path/to/output_directory>
 	 -d turn on debug mode
 
  EXAMPLES:
  vqsr.sh -h
- vqsr.sh -s sample -S /path/to/sentieon_directory -t 8 -G reference.fa -V sample.vcf -r "'--resource 1000G.vcf --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 --resource omni.vcf --resource_param omni,known=false,training=true,truth=false,prior=12.0 --resource dbSNP.vcf --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 --resource hapmap.vcf --resource_param hapmap,known=false,training=true,truth=true,prior=15.0'" -R "'--resource dbSNP.vcf --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 --resource mills.vcf --resource_param Mills,known=false,training=true,truth=true,prior=12.0 --resource dbSNP.vcf --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0'" -a "'--annotation DP --annotation QD --annotation FS --annotation SOR --annotation MQ --annotation MQRankSum --annotation ReadPosRankSum'"  -e /path/to/env_profile_file -d
+ vqsr.sh -s sample -S /path/to/sentieon_directory -t 8 -G reference.fa -V sample.vcf -r "'--resource 1000G.vcf --resource_param 1000G,known=false,training=true,truth=false,prior=10.0 --resource omni.vcf --resource_param omni,known=false,training=true,truth=false,prior=12.0 --resource dbSNP.vcf --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 --resource hapmap.vcf --resource_param hapmap,known=false,training=true,truth=true,prior=15.0'" -R "'--resource dbSNP.vcf --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0 --resource mills.vcf --resource_param Mills,known=false,training=true,truth=true,prior=12.0 --resource dbSNP.vcf --resource_param dbsnp,known=true,training=false,truth=false,prior=2.0'" -a "'--annotation DP --annotation QD --annotation FS --annotation SOR --annotation MQ --annotation MQRankSum --annotation ReadPosRankSum'"  -e /path/to/env_profile_file -D /path/to/output_directory -d
 
 
 NOTE: In order for getops to read in a string arguments for -r (resource_string_for_SNPs) and -R (resource_string_for_INDELs), the argument needs to be quoted with a double quote (") followed by a single quote ('). See the example above.
@@ -165,7 +166,7 @@ then
 fi
 
 ## Input and Output parameters
-while getopts ":hs:S:t:G:V:r:R:a:e:d" OPT
+while getopts ":hs:S:t:G:V:r:R:a:e:D:d" OPT
 do
 	case ${OPT} in
 		h ) # Flag to display usage
@@ -202,6 +203,10 @@ do
 			;;
                 a ) # Annotation text 
                         ANNOTATE_TEXT=${OPTARG}
+                        checkArg
+                        ;;
+		D )  # Path to file with environmental profile variables
+                        OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;
                 e )  # Path to file with environmental profile variables
@@ -312,6 +317,21 @@ then
         logError "$0 stopped at line $LINENO. \nREASON=Input sample vcf ${SAMPLEVCF} is empty or does not exist."
 fi
 
+## Check if the sample VCF input file option was passed in
+if [[ -z ${OUTPUT_DIRECTORY+x} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line $LINENO. \nREASON=Missing output directory option: -D"
+fi
+
+## Check if the sample VCF input file is present
+if [[ ! -d ${OUTPUT_DIRECTORY} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line $LINENO. \nREASON=${OUTPUT_DIRECTORY} does not exist or is empty."
+fi
+
+
 ## Check if the resource string for SNPs was passed in
 if [[ -z ${RESOURCE_SNPS+x} ]] 
 then 
@@ -415,7 +435,7 @@ fi
 ## Apply VQSR for INDELs
 TRAP_LINE=$(($LINENO + 1))
 trap 'logError " $0 stopped at line ${TRAP_LINE} Error in VQSR ApplyVarCal for INDELs. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${THR} -r ${REF} --algo ApplyVarCal -v ${SAMPLE}.SNP.recaled.vcf --var_type ${TYPE} --tranches_file ${SAMPLE}.${TYPE}.tranches --recal ${SAMPLE}.${TYPE}.recal ${SAMPLE}.${TYPE}.SNP.recaled.vcf >> ${SAMPLE}.vqsr_sentieon.log 2>&1
+${SENTIEON}/bin/sentieon driver -t ${THR} -r ${REF} --algo ApplyVarCal -v ${SAMPLE}.SNP.recaled.vcf --var_type ${TYPE} --tranches_file ${SAMPLE}.${TYPE}.tranches --recal ${SAMPLE}.${TYPE}.recal ${OUTPUT_DIRECTORY}/${SAMPLE}.${TYPE}.SNP.recaled.vcf >> ${SAMPLE}.vqsr_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 if [[ ${EXITCODE} -ne 0 ]]
@@ -451,22 +471,22 @@ logInfo "[vqsr] Finished running successfully for ${SAMPLE}"
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Check for the creation of final recalibrated VCF with the VQSR applied to SNPs and INDELs.
-if [[ ! -s ${SAMPLE}.${TYPE}.SNP.recaled.vcf ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${SAMPLE}.${TYPE}.SNP.recaled.vcf ]]
 then
 	EXITCODE=1
 	logError "$0 stopped at line $LINENO. \nREASON=Output recalibrated SNP/INDEL VCF is empty."
 fi
 
-chmod g+r ${SAMPLE}.${TYPE}.SNP.recaled.vcf
+chmod g+r ${OUTPUT_DIRECTORY}/${SAMPLE}.${TYPE}.SNP.recaled.vcf
 
 ## Check for the creation of the final recalibrated VCF index file.
-if [[ ! -s ${SAMPLE}.${TYPE}.SNP.recaled.vcf.idx ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${SAMPLE}.${TYPE}.SNP.recaled.vcf.idx ]]
 then
 	EXITCODE=1
 	logError "$0 stopped at line $LINENO. \nREASON=Output recalibrated SNP/INDEL VCF index is empty."
 fi
 
-chmod g+r ${SAMPLE}.${TYPE}.SNP.recaled.vcf.idx
+chmod g+r ${OUTPUT_DIRECTORY}/${SAMPLE}.${TYPE}.SNP.recaled.vcf.idx
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------
 
