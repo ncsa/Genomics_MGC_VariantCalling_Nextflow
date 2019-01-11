@@ -1,1 +1,0 @@
-2019-01-11 17:12:03	6.4s	awesome_venter	OK	a7193e48df168b8ccf461ffb70e0df6e	f14b67f6-e060-4621-aaaf-5f09f9085e9f	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/bqsr.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/bqsr.config
