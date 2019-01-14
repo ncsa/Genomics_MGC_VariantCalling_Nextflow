@@ -10,7 +10,7 @@
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */
 /*       -k        "List of Known Sites"                       (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
-/* 	 -D 	   "Path to Output Directory"		       (Required)		   */
+/* 	 -O 	   "Path to Output Directory"		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -56,6 +56,6 @@ process Realignment{
 
    script:
        """
-       /bin/bash ${RealignmentScript} -s ${SampleName} -b ${InputAlignedSortedDedupedBam} -G ${Ref} -k ${RealignmentKnownSites} -S ${Sentieon} -t ${SentieonThreads} -e ${RealignEnvProfile} -D ${RealignmentOutputDirectory}  ${DebugMode}
+       /bin/bash ${RealignmentScript} -s ${SampleName} -b ${InputAlignedSortedDedupedBam} -G ${Ref} -k ${RealignmentKnownSites} -S ${Sentieon} -t ${SentieonThreads} -e ${RealignEnvProfile} -O ${RealignmentOutputDirectory}  ${DebugMode}
        """
 }

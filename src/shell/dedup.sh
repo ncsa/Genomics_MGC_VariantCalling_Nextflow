@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #-------------------------------------------------------------------------------------------------------------------------------
-## alignment.sh MANIFEST, USAGE DOCS, SET CHECKS
+## dedup.sh MANIFEST, USAGE DOCS, SET CHECKS
 #-------------------------------------------------------------------------------------------------------------------------------
 
 read -r -d '' MANIFEST << MANIFEST
@@ -13,8 +13,7 @@ command line input: ${@}
 *****************************************************************************
 
 MANIFEST
-echo -e "\n${MANIFEST}"
-
+echo -e "${MANIFEST}"
 
 
 
@@ -26,30 +25,22 @@ read -r -d '' DOCS << DOCS
 
 #############################################################################
 #
-# Align sequences using Sentieon/BWA-MEM. Part of the MayomicsVC Workflow.
+# Deduplicate BAMs with Sentieon. Part of the MayomicsVC Workflow.
 # 
 #############################################################################
 
  USAGE:
- alignment.sh      -g		<readgroup_ID>
-                   -s           <sample_name> 
-                   -p		<platform>
-                   -l           <read1.fq> 
-                   -r           <read2.fq>
-                   -G		<reference_genome>
-                   -K		<chunk_size_in_bases> 
+ dedup.sh          -s           <sample_name> 
+                   -b		<aligned.sorted.bam>
                    -S           </path/to/sentieon> 
                    -t           <threads> 
-                   -P		paired-end reads (true/false)
                    -e           </path/to/env_profile_file>
-		   -D 		</path/to/output_directory>
+		   -O 		</path/to/output_directory>
                    -d           turn on debug mode
 
  EXAMPLES:
- alignment.sh -h
- alignment.sh -g readgroup_ID -s sample -p platform -l read1.fq -r read2.fq -G reference.fa -K 10000000 -S /path/to/sentieon_directory -t 12 -P true -e /path/to/env_profile_file -D /path/to/output_directory -d
-
- NOTE: To prevent different results due to thread count, set -K to 10000000 as recommended by the Sentieon manual.
+ dedup.sh -h
+ dedup.sh -s sample -b aligned.sorted.bam -S /path/to/sentieon_directory -t 12 -O /path/to/output_directory -e /path/to/env_profile_file -d
 
 #############################################################################
 
@@ -61,11 +52,12 @@ DOCS
 
 
 
+
 set -o errexit
 set -o pipefail
 set -o nounset
 
-SCRIPT_NAME=alignment.sh
+SCRIPT_NAME=dedup.sh
 SGE_JOB_ID=TBD  # placeholder until we parse job ID
 SGE_TASK_ID=TBD  # placeholder until we parse task ID
 
@@ -79,6 +71,7 @@ SGE_TASK_ID=TBD  # placeholder until we parse task ID
 ## LOGGING FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------------------------
 
+## Logging functions
 # Get date and time information
 function getDate()
 {
@@ -159,46 +152,26 @@ function checkArg()
 ## Check if no arguments were passed
 if (($# == 0))
 then
-	echo -e "\nNo arguments passed.\n\n${DOCS}\n"
-	exit 1
+        echo -e "\nNo arguments passed.\n\n${DOCS}\n"
+        exit 1
 fi
 
 ## Input and Output parameters
-while getopts ":hg:s:p:l:r:G:K:S:t:P:e:D:d" OPT
+while getopts ":hs:b:S:t:e:O:d" OPT
 do
         case ${OPT} in
-                h )  # Flag to display usage
+                h )  # Flag to display usage 
                         echo -e "\n${DOCS}\n"
-                        exit 0
-			;;
-                g )  # Read group ID
-                        GROUP=${OPTARG}
-			checkArg
+			exit 0
                         ;;
-                s )  # Sample name
-                        SAMPLE=${OPTARG}
-			checkArg
-                        ;;
-                p )  # Sequencing platform
-                        PLATFORM=${OPTARG}
-			checkArg
-                        ;;
-                l )  # Full path to input read 1
-                        INPUT1=${OPTARG}
-			checkArg
-                        ;;
-                r )  # Full path to input read 2
-                        INPUT2=${OPTARG}
-			checkArg
-                        ;;
-                G )  # Full path to referance genome fasta file
-                        REFGEN=${OPTARG}
-			checkArg
-                        ;;
-		K )  # Chunk size in bases (10000000 to prevent different results based on thread count)
-			CHUNK_SIZE=${OPTARG}
+		s )  # Sample name
+			SAMPLE=${OPTARG}
 			checkArg
 			;;
+                b )  # Full path to the input BAM file
+                        INPUTBAM=${OPTARG}
+			checkArg
+                        ;;
                 S )  # Full path to sentieon directory
                         SENTIEON=${OPTARG}
 			checkArg
@@ -207,21 +180,18 @@ do
                         THR=${OPTARG}
 			checkArg
                         ;;
-                P )  # Is this a paired-end process? [true/false] Invoked with -P
-                        IS_PAIRED_END=${OPTARG}
-			checkArg
-                        ;;
                 e )  # Path to file with environmental profile variables
                         ENV_PROFILE=${OPTARG}
                         checkArg
                         ;;
-		D )  # Path to file with environmental profile variables
+		O )  # Path to output directory
                         OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;
+
                 d )  # Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d
-			echo -e "\nDebug mode is ON.\n"
-                        set -x
+                        echo -e "\nDebug mode is ON.\n"
+			set -x
                         ;;
 		\? )  # Check for unsupported flag, print usage and exit.
                         echo -e "\nInvalid option: -${OPTARG}\n\n${DOCS}\n"
@@ -231,7 +201,6 @@ do
                         echo -e "\nOption -${OPTARG} requires an argument.\n\n${DOCS}\n"
                         exit 1
                         ;;
-
         esac
 done
 
@@ -253,13 +222,12 @@ then
 fi
 
 ## Create log for JOB_ID/script
-ERRLOG=${SAMPLE}.alignment.${SGE_JOB_ID}.log
+ERRLOG=${SAMPLE}.dedup.${SGE_JOB_ID}.log
 truncate -s 0 "${ERRLOG}"
-truncate -s 0 ${SAMPLE}.align_sentieon.log
+truncate -s 0 ${SAMPLE}.dedup_sentieon.log
 
 ## Write manifest to log
 echo "${MANIFEST}" >> "${ERRLOG}"
-
 
 ## source the file with environmental profile variables
 if [[ ! -z ${ENV_PROFILE+x} ]]
@@ -271,61 +239,20 @@ else
 fi
 
 ## Check if input files, directories, and variables are non-zero
-if [[ -z ${INPUT1+x} ]]
+if [[ -z ${INPUTBAM+x} ]]
 then
         EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Missing read 1 option: -l"
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing input BAM option: -b"
 fi
-if [[ ! -s ${INPUT1} ]]
+if [[ ! -s ${INPUTBAM} ]]
 then 
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Input read 1 file ${INPUT1} is empty or does not exist."
+        logError "$0 stopped at line ${LINENO}. \nREASON=Input sorted BAM file ${INPUTBAM} is empty or does not exist."
 fi
-if [[ -z ${INPUT2+x} ]]
-then
-        EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Missing read 2 option: -r. If running a single-end job, set -r null in command."
-fi
-if [[ -z ${IS_PAIRED_END+x} ]]
-then
-        EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Missing paired-end option: -P"
-fi
-if [[ "${IS_PAIRED_END}" != true ]] && [[ "${IS_PAIRED_END}" != false ]]
+if [[ ! -s ${INPUTBAM}.bai ]]
 then
 	EXITCODE=1
-	logError "$0 stopped at line ${LINENO}. \nREASON=Incorrect argument for paired-end option -P. Must be set to true or false."
-fi
-if [[ "${IS_PAIRED_END}" == true ]]
-then
-	if [[ ! -s ${INPUT2} ]]
-	then
-		EXITCODE=1
-		logError "$0 stopped at line ${LINENO}. \nREASON=Input read 2 file ${INPUT2} is empty or does not exist."
-	fi
-	if [[ "${INPUT2}" == null ]]
-	then
-		EXITCODE=1
-		logError "$0 stopped at line ${LINENO}/ \nREASON=User specified Paired End option -P, but set read 2 option -r to null."
-	fi
-fi
-if [[ "${IS_PAIRED_END}" == false ]]
-then
-	if [[  "${INPUT2}" != null ]]
-	then
-		EXITCODE=1
-		logError "$0 stopped at line ${LINENO}/ \nREASON=User specified Single End option, but did not set read 2 option -r to null."
-	fi
-fi
-if [[ -z ${REFGEN+x} ]]
-then
-        EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Missing reference genome option: -G"
-fi
-if [[ ! -s ${REFGEN} ]]
-then
-	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Reference genome file ${REFGEN} is empty or does not exist."
+        logError "$0 stopped at line ${LINENO}. \nREASON=Sorted BAM index file ${INPUTBAM}.bai is empty or does not exist."
 fi
 if [[ -z ${OUTPUT_DIRECTORY+x} ]]
 then
@@ -335,26 +262,7 @@ fi
 if [[ ! -d ${OUTPUT_DIRECTORY} ]]
 then
         EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON= ${OUTPUT_DIRECTORY} does not exist or is not a directory."
-fi
-if [[ -z ${CHUNK_SIZE+x} ]]
-then
-	EXITCODE=1
-	logError "$0 stopped at line ${LINENO}. \nREASON=Missing read group option: -K\nSet -K 10000000 to prevent different results based on thread count."
-fi
-if [[ ${CHUNK_SIZE} != 10000000 ]]
-then
-	logWarn "[BWA-MEM] Chunk size option -K set to ${CHUNK_SIZE}. When this option is not set to 10000000, there may be different results per run based on different thread counts."
-fi
-if [[ -z ${GROUP+x} ]]
-then
-        EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Missing read group option: -g"
-fi
-if [[ -z ${PLATFORM+x} ]]
-then
-        EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Missing sequencing platform option: -p"
+        logError "$0 stopped at line ${LINENO}. \nREASON=Input sorted BAM file ${OUTPUT_DIRECTORY} does not exist or is not a directory."
 fi
 if [[ -z ${SENTIEON+x} ]]
 then
@@ -364,13 +272,14 @@ fi
 if [[ ! -d ${SENTIEON} ]]
 then
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=BWA directory ${SENTIEON} is not a directory or does not exist."
+        logError "$0 stopped at line ${LINENO}. \nREASON=Sentieon directory ${SENTIEON} is not a directory or does not exist."
 fi
 if [[ -z ${THR+x} ]]
 then
         EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Missing threads option: -t"
 fi
+
 #-------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -381,85 +290,51 @@ fi
 ## FILENAME PARSING
 #-------------------------------------------------------------------------------------------------------------------------------
 
-## Set output file names
-OUT=${SAMPLE}.sam
-SORTBAM=${SAMPLE}.aligned.sorted.bam
-SORTBAMIDX=${SAMPLE}.aligned.sorted.bam.bai
-TOOL_LOG=${SAMPLE}.align_sentieon.log
+## Defining file names
+samplename=${SAMPLE}
+SCORETXT=${SAMPLE}.deduped.score.txt
+OUT=${SAMPLE}.aligned.sorted.deduped.bam
+OUTBAMIDX=${SAMPLE}.aligned.sorted.deduped.bam.bai
+DEDUPMETRICS=${SAMPLE}.dedup_metrics.txt
+
+#-------------------------------------------------------------------------------------------------------------------------------
+
+
+
 
 
 #-------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-#-------------------------------------------------------------------------------------------------------------------------------
-## READ ALIGNMENT
+## DEDUPLICATION STAGE
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Record start time
-logInfo "[BWA-MEM] START."
+logInfo "[SENTIEON] Collecting info to deduplicate BAM with Locus Collector."
 
-## BWA-MEM command, run for each read against a reference genome. 
-if [[ "${IS_PAIRED_END}" == false ]] # Align single read to reference genome
-then
-	TRAP_LINE=$(($LINENO + 1))
-	trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon BWA-MEM error in read alignment. " ' INT TERM EXIT
-	${SENTIEON}/bin/bwa mem -M -R "@RG\tID:$GROUP\tSM:${SAMPLE}\tPL:${PLATFORM}" -K ${CHUNK_SIZE} -t ${THR} ${REFGEN} ${INPUT1} > ${OUTPUT_DIRECTORY}/${OUT} 2>>${TOOL_LOG}
-	EXITCODE=$?  # Capture exit code
-	trap - INT TERM EXIT
-
-	if [[ ${EXITCODE} -ne 0 ]]
-        then
-                logError "$0 stopped at line ${LINENO} with exit code ${EXITCODE}."
-        fi
-else # Paired-end reads aligned
-	TRAP_LINE=$(($LINENO + 1))
-	trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon BWA-MEM error in read alignment. " ' INT TERM EXIT
-	${SENTIEON}/bin/bwa mem -M -R "@RG\tID:$GROUP\tSM:${SAMPLE}\tPL:${PLATFORM}" -K ${CHUNK_SIZE} -t ${THR} ${REFGEN} ${INPUT1} ${INPUT2} > ${OUTPUT_DIRECTORY}/${OUT} 2>>${TOOL_LOG} 
-	EXITCODE=$?  # Capture exit code
-	trap - INT TERM EXIT
-
-        if [[ ${EXITCODE} -ne 0 ]]
-        then
-                logError "$0 stopped at line ${LINENO} with exit code ${EXITCODE}."
-	fi
-fi
-
-if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT} ]]
-then
-	EXITCODE=1
-	logError "$0 stopped at line ${LINENO}. \nREASON=Output SAM ${OUT} is empty."
-fi
-
-
-logInfo "[BWA-MEM] Aligned reads ${SAMPLE} to reference ${REFGEN}."
-
-#-------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-#-------------------------------------------------------------------------------------------------------------------------------
-## BAM CONVERSION AND SORTING
-#-------------------------------------------------------------------------------------------------------------------------------
-
-## Convert SAM to BAM and sort
-logInfo "[SENTIEON] Converting SAM to BAM..."
-
+## Locus Collector command
 TRAP_LINE=$(($LINENO + 1))
-trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon BAM conversion and sorting error. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon util sort -t ${THR} --sam2bam -i ${OUTPUT_DIRECTORY}/${OUT} -o ${OUTPUT_DIRECTORY}/${SORTBAM} >> ${TOOL_LOG} 2>&1
-EXITCODE=$?  # Capture exit code
+trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon LocusCollector error. " ' INT TERM EXIT
+${SENTIEON}/bin/sentieon driver -t ${THR} -i ${INPUTBAM} --algo LocusCollector --fun score_info ${SCORETXT} >> ${SAMPLE}.dedup_sentieon.log 2>&1
+EXITCODE=$?
 trap - INT TERM EXIT
 
 if [[ ${EXITCODE} -ne 0 ]]
 then
 	logError "$0 stopped at line ${LINENO} with exit code ${EXITCODE}."
 fi
-logInfo "[SENTIEON] Converted output to BAM format and sorted."
+logInfo "[SENTIEON] Locus Collector finished; starting Dedup."
+
+## Dedup command (Note: optional --rmdup flag will remove duplicates; without, duplicates are marked but not removed)
+TRAP_LINE=$(($LINENO + 1))
+trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon Deduplication error. " ' INT TERM EXIT
+${SENTIEON}/bin/sentieon driver -t ${THR} -i ${INPUTBAM} --algo Dedup --score_info ${SCORETXT} --metrics ${DEDUPMETRICS} ${OUTPUT_DIRECTORY}/${OUT} >> ${SAMPLE}.dedup_sentieon.log 2>&1
+EXITCODE=$?
+trap - INT TERM EXIT
+
+if [[ ${EXITCODE} -ne 0 ]]
+then
+        logError "$0 stopped at line ${LINENO} with exit code ${EXITCODE}."
+fi
+logInfo "[SENTIEON] Deduplication Finished. Deduplicated BAM found at ${OUT}"
 
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -471,25 +346,22 @@ logInfo "[SENTIEON] Converted output to BAM format and sorted."
 ## POST-PROCESSING
 #-------------------------------------------------------------------------------------------------------------------------------
 
-## Check if BAM and index were created. Open read permissions to the user group
-if [[ ! -s ${OUTPUT_DIRECTORY}/${SORTBAM} ]]
+## Check for creation of output BAM and index. Open read permissions to the user group
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT} ]]
 then
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Output sorted BAM ${SORTBAM} is empty."
+        logError "$0 stopped at line ${LINENO}. \nREASON=Output deduplicated BAM file ${OUT} is empty."
 fi
-if [[ ! -s ${OUTPUT_DIRECTORY}/${SORTBAMIDX} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUTBAMIDX} ]]
 then
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Output sorted BAM index ${SORTBAMIDX} is empty."
+        logError "$0 stopped at line ${LINENO}. \nREASON=Output deduplicated BAM index file ${OUTBAMIDX} is empty."
 fi
 
 chmod g+r ${OUTPUT_DIRECTORY}/${OUT}
-chmod g+r ${OUTPUT_DIRECTORY}/${SORTBAM}
-chmod g+r ${OUTPUT_DIRECTORY}/${SORTBAMIDX}
-
-logInfo "[BWA-MEM] Finished alignment. Aligned reads found in BAM format at ${SORTBAM}."
-
-rm ${OUTPUT_DIRECTORY}/${OUT}
+chmod g+r ${OUTPUT_DIRECTORY}/${OUTBAMIDX}
+chmod g+r ${DEDUPMETRICS}
+chmod g+r ${SCORETXT}
 
 #-------------------------------------------------------------------------------------------------------------------------------
 

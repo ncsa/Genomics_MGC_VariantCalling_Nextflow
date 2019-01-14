@@ -11,6 +11,7 @@
 /*         -A        "Adapter File for CutAdapt"                 (Required)              */
 /*         -C        "Path to CutAdapt Tool"                     (Required)              */
 /* 	   -e 	     "Path to the environmental profile"	 (Required)		 */
+/* 	   -O 	     "Path to the output directory" 		 (Required)	 	 */
 /*	   -d 	     "debug mode on/off"			 (Optional: can be empty)*/
 /*****************************************************************************************/
 
@@ -52,7 +53,7 @@ process TrimSequences {
 
    script:
       """
-      /bin/bash $TrimSeqScript -P $PairedEnd -l $InputRead1 -r $InputRead2 -s $SampleName -A $Adapters -C $CutAdapt -t $CutAdaptThreads -e $TrimEnvProfile -D $TrimSequencesOutputDirectory $DebugMode
+      /bin/bash $TrimSeqScript -P $PairedEnd -l $InputRead1 -r $InputRead2 -s $SampleName -A $Adapters -C $CutAdapt -t $CutAdaptThreads -e $TrimEnvProfile -O $TrimSequencesOutputDirectory $DebugMode
       """
 
 }

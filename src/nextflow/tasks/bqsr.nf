@@ -9,7 +9,7 @@
 /*       -s        "Name of the sample"                        (Optional)                  */
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */
 /*       -k        "List of Known Sites"                       (Required)                  */
-/*       -D        "Path to Output Directory"                  (Required)                  */
+/*       -O        "Path to Output Directory"                  (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
@@ -55,6 +55,6 @@ process BQSR{
 
    script:
        """
-       /bin/bash ${BQSRScript} -s ${SampleName} -b ${InputAlignedSortedDedupedRealignedBam} -G ${Ref} -k ${BQSRKnownSites} -D ${BQSROutputDirectory} -S ${Sentieon} -t ${SentieonThreads} -e ${BQSREnvProfile}  ${DebugMode}
+       /bin/bash ${BQSRScript} -s ${SampleName} -b ${InputAlignedSortedDedupedRealignedBam} -G ${Ref} -k ${BQSRKnownSites} -O ${BQSROutputDirectory} -S ${Sentieon} -t ${SentieonThreads} -e ${BQSREnvProfile}  ${DebugMode}
        """
 }

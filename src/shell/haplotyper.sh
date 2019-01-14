@@ -198,7 +198,7 @@ do
                         ENV_PROFILE=${OPTARG}
                         checkArg
                         ;;
-		O )  # Path to file with environmental profile variables
+		O )  # Path to output directory
                         OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;

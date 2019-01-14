@@ -36,13 +36,13 @@ read -r -d '' DOCS << DOCS
 	 -t 	<threads>
 	 -b 	<sorted.deduped.realigned.bam>
 	 -k 	<known_sites> (omni.vcf, hapmap.vcf, indels.vcf, dbSNP.vcf)
-         -D 	</path/to/output_directory>
+         -O 	</path/to/output_directory>
 	 -e     </path/to/env_profile_file>
 	 -d	turn on debug mode	
 
  EXAMPLES:
  bqsr.sh -h
- bqsr.sh -s sample -S /path/to/sentieon_directory -G reference.fa -t 12 -b sorted.deduped.realigned.bam -D /path/to/output_directory -k known1.vcf,known2.vcf,...knownN.vcf -e /path/to/env_profile_file -d 
+ bqsr.sh -s sample -S /path/to/sentieon_directory -G reference.fa -t 12 -b sorted.deduped.realigned.bam -O /path/to/output_directory -k known1.vcf,known2.vcf,...knownN.vcf -e /path/to/env_profile_file -d 
 
 ############################################################################################################################
 
@@ -156,7 +156,7 @@ then
 fi
 
 
-while getopts ":hs:S:G:t:b:k:e:D:d" OPT
+while getopts ":hs:S:G:t:b:k:e:O:d" OPT
 do
 	case ${OPT} in
 		h ) # flag to display help message
@@ -191,7 +191,7 @@ do
                         ENV_PROFILE=${OPTARG}
                         checkArg
                         ;;
-		D )  # Path to output directory
+		O )  # Path to output directory
                         OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;

@@ -9,7 +9,7 @@
 /*       -s        "Name of the sample"                        (Required)                  */
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
-/* 	 -D 	   "Path to Output Directory"		       (Required)		   */
+/* 	 -O 	   "Path to Output Directory"		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -65,6 +65,6 @@ process Vqsr{
 
    script:
        """
-       /bin/bash ${VqsrScript} -s ${SampleName} -V ${InputVCF} -G ${Ref} -r ${VqsrSnpResourceStringFinal} -R ${VqsrIndelResourceStringFinal} -a ${AnnotateTextFinal} -S ${Sentieon} -t ${SentieonThreads} -e ${VqsrEnvProfile} -D ${VqsrOutputDirectory} ${DebugMode}
+       /bin/bash ${VqsrScript} -s ${SampleName} -V ${InputVCF} -G ${Ref} -r ${VqsrSnpResourceStringFinal} -R ${VqsrIndelResourceStringFinal} -a ${AnnotateTextFinal} -S ${Sentieon} -t ${SentieonThreads} -e ${VqsrEnvProfile} -O ${VqsrOutputDirectory} ${DebugMode}
        """
 }

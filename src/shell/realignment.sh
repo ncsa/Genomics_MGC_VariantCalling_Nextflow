@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #-------------------------------------------------------------------------------------------------------------------------------
-## dedup.sh MANIFEST, USAGE DOCS, SET CHECKS
+## realignment.sh MANIFEST, USAGE DOCS, SET CHECKS
 #-------------------------------------------------------------------------------------------------------------------------------
 
 read -r -d '' MANIFEST << MANIFEST
@@ -13,7 +13,7 @@ command line input: ${@}
 *****************************************************************************
 
 MANIFEST
-echo -e "${MANIFEST}"
+echo -e "\n${MANIFEST}"
 
 
 
@@ -25,22 +25,24 @@ read -r -d '' DOCS << DOCS
 
 #############################################################################
 #
-# Deduplicate BAMs with Sentieon. Part of the MayomicsVC Workflow.
+# Realign reads using Sentieon Realigner. Part of the MayomicsVC Workflow.
 # 
 #############################################################################
 
  USAGE:
- dedup.sh          -s           <sample_name> 
-                   -b		<aligned.sorted.bam>
+ realignment.sh    -s           <sample_name> 
+                   -b           <sorted.deduped.bam>
+                   -G		<reference_genome>
+                   -k		<known_sites> (omni.vcf, hapmap.vcf, indels.vcf, dbSNP.vcf) 
                    -S           </path/to/sentieon> 
                    -t           <threads> 
                    -e           </path/to/env_profile_file>
-		   -D 		</path/to/output_directory>
+		   -O 		</path/to/output/directory>
                    -d           turn on debug mode
 
  EXAMPLES:
- dedup.sh -h
- dedup.sh -s sample -b aligned.sorted.bam -S /path/to/sentieon_directory -t 12 -D /path/to/output_directory -e /path/to/env_profile_file -d
+ realignment.sh -h
+ realignment.sh -s sample -b sorted.deduped.bam -G reference.fa -k known1.vcf,known2.vcf,...knownN.vcf -S /path/to/sentieon_directory -t 12 -e /path/to/env_profile_file -O /path/to/output_directory -d
 
 #############################################################################
 
@@ -53,11 +55,12 @@ DOCS
 
 
 
+
 set -o errexit
 set -o pipefail
 set -o nounset
 
-SCRIPT_NAME=dedup.sh
+SCRIPT_NAME=realignment.sh
 SGE_JOB_ID=TBD  # placeholder until we parse job ID
 SGE_TASK_ID=TBD  # placeholder until we parse task ID
 
@@ -71,7 +74,6 @@ SGE_TASK_ID=TBD  # placeholder until we parse task ID
 ## LOGGING FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------------------------
 
-## Logging functions
 # Get date and time information
 function getDate()
 {
@@ -157,21 +159,29 @@ then
 fi
 
 ## Input and Output parameters
-while getopts ":hs:b:S:t:e:D:d" OPT
+while getopts ":hs:b:G:k:S:t:e:O:d" OPT
 do
         case ${OPT} in
-                h )  # Flag to display usage 
+                h )  # Flag to display usage
                         echo -e "\n${DOCS}\n"
-			exit 0
+                        exit 0
+			;;
+                s )  # Sample name
+                        SAMPLE=${OPTARG}
+			checkArg
                         ;;
-		s )  # Sample name
-			SAMPLE=${OPTARG}
+		b )  # Full path to the input deduped BAM
+			INPUTBAM=${OPTARG}
 			checkArg
 			;;
-                b )  # Full path to the input BAM file
-                        INPUTBAM=${OPTARG}
+                G )  # Full path to reference genome fasta file
+                        REFGEN=${OPTARG}
 			checkArg
                         ;;
+		k )  # Full path to known sites files
+			KNOWN=${OPTARG}
+			checkArg
+			;;
                 S )  # Full path to sentieon directory
                         SENTIEON=${OPTARG}
 			checkArg
@@ -184,20 +194,20 @@ do
                         ENV_PROFILE=${OPTARG}
                         checkArg
                         ;;
-		 D )  # Path to output directory
+		O )  # Path to output directory
                         OUTPUT_DIRECTORY=${OPTARG}
                         checkArg
                         ;;
 
                 d )  # Turn on debug mode. Initiates 'set -x' to print all text. Invoked with -d
-                        echo -e "\nDebug mode is ON.\n"
+			echo -e "\nDebug mode is ON.\n"
 			set -x
                         ;;
 		\? )  # Check for unsupported flag, print usage and exit.
                         echo -e "\nInvalid option: -${OPTARG}\n\n${DOCS}\n"
                         exit 1
                         ;;
-                : )  # Check for missing arguments, print usage and exit.
+		: )  # Check for missing arguments, print usage and exit.
                         echo -e "\nOption -${OPTARG} requires an argument.\n\n${DOCS}\n"
                         exit 1
                         ;;
@@ -222,9 +232,9 @@ then
 fi
 
 ## Create log for JOB_ID/script
-ERRLOG=${SAMPLE}.dedup.${SGE_JOB_ID}.log
+ERRLOG=${SAMPLE}.realignment.${SGE_JOB_ID}.log
 truncate -s 0 "${ERRLOG}"
-truncate -s 0 ${SAMPLE}.dedup_sentieon.log
+truncate -s 0 ${SAMPLE}.realign_sentieon.log
 
 ## Write manifest to log
 echo "${MANIFEST}" >> "${ERRLOG}"
@@ -242,19 +252,29 @@ fi
 if [[ -z ${INPUTBAM+x} ]]
 then
         EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Missing input BAM option: -b"
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing input deduplicated BAM option: -b"
 fi
 if [[ ! -s ${INPUTBAM} ]]
-then 
+then
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Input sorted BAM file ${INPUTBAM} is empty or does not exist."
+	logError "$0 stopped at line ${LINENO}. \nREASON=Deduped BAM ${INPUTBAM} is empty or does not exist."
 fi
 if [[ ! -s ${INPUTBAM}.bai ]]
 then
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Sorted BAM index file ${INPUTBAM}.bai is empty or does not exist."
+       logError "$0 stopped at line ${LINENO}. \nREASON=Deduped BAM index ${INPUTBAM}.bai is empty or does not exist."
 fi
-if [[ -z ${OUTPUT_DIRECTORY+x} ]]
+if [[ -z ${REFGEN+x} ]]
+then
+        EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Missing reference genome option: -G"
+fi
+if [[ ! -s ${REFGEN} ]]
+then
+	EXITCODE=1
+        logError "$0 stopped at line ${LINENO}. \nREASON=Reference genome file ${REFGEN} is empty or does not exist."
+fi
+if [[ -z ${OUTPUT_DIRECTORY} ]]
 then
         EXITCODE=1
         logError "$0 stopped at line ${LINENO}. \nREASON=Missing output directory option: -D"
@@ -262,7 +282,12 @@ fi
 if [[ ! -d ${OUTPUT_DIRECTORY} ]]
 then
         EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Input sorted BAM file ${OUTPUT_DIRECTORY} does not exist or is not a directory."
+        logError "$0 stopped at line ${LINENO}. \nREASON= ${OUTPUT_DIRECTORY} does not exist or is not a directory."
+fi
+if [[ -z ${KNOWN+x} ]]
+then
+	EXITCODE=1
+	logError "$0 stopped at line ${LINENO}. \nREASON=Missing known sites option ${KNOWN}: -k"
 fi
 if [[ -z ${SENTIEON+x} ]]
 then
@@ -287,15 +312,15 @@ fi
 
 
 #-------------------------------------------------------------------------------------------------------------------------------
-## FILENAME PARSING
+## FILENAME AND OPTION PARSING
 #-------------------------------------------------------------------------------------------------------------------------------
 
-## Defining file names
-samplename=${SAMPLE}
-SCORETXT=${SAMPLE}.deduped.score.txt
-OUT=${SAMPLE}.aligned.sorted.deduped.bam
-OUTBAMIDX=${SAMPLE}.aligned.sorted.deduped.bam.bai
-DEDUPMETRICS=${SAMPLE}.dedup_metrics.txt
+## Parse known sites list of multiple files. Create multiple -k flags for sentieon
+SPLITKNOWN=`sed -e 's/,/ -k /g' <<< ${KNOWN}`
+echo ${SPLITKNOWN}
+
+## Parse filenames without full path
+OUT=${SAMPLE}.aligned.sorted.deduped.realigned.bam
 
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -304,29 +329,16 @@ DEDUPMETRICS=${SAMPLE}.dedup_metrics.txt
 
 
 #-------------------------------------------------------------------------------------------------------------------------------
-## DEDUPLICATION STAGE
+## REALIGNMENT STAGE
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Record start time
-logInfo "[SENTIEON] Collecting info to deduplicate BAM with Locus Collector."
+logInfo "[Realigner] START. Realigning deduped BAM. Using known sites at ${KNOWN} ."
 
-## Locus Collector command
+## Sentieon Realigner command.
 TRAP_LINE=$(($LINENO + 1))
-trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon LocusCollector error. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${THR} -i ${INPUTBAM} --algo LocusCollector --fun score_info ${SCORETXT} >> ${SAMPLE}.dedup_sentieon.log 2>&1
-EXITCODE=$?
-trap - INT TERM EXIT
-
-if [[ ${EXITCODE} -ne 0 ]]
-then
-	logError "$0 stopped at line ${LINENO} with exit code ${EXITCODE}."
-fi
-logInfo "[SENTIEON] Locus Collector finished; starting Dedup."
-
-## Dedup command (Note: optional --rmdup flag will remove duplicates; without, duplicates are marked but not removed)
-TRAP_LINE=$(($LINENO + 1))
-trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon Deduplication error. " ' INT TERM EXIT
-${SENTIEON}/bin/sentieon driver -t ${THR} -i ${INPUTBAM} --algo Dedup --score_info ${SCORETXT} --metrics ${DEDUPMETRICS} ${OUTPUT_DIRECTORY}/${OUT} >> ${SAMPLE}.dedup_sentieon.log 2>&1
+trap 'logError " $0 stopped at line ${TRAP_LINE}. Sentieon Realignment error. " ' INT TERM EXIT
+${SENTIEON}/bin/sentieon driver -t ${THR} -r ${REFGEN} -i ${INPUTBAM} --algo Realigner -k ${SPLITKNOWN} ${OUTPUT_DIRECTORY}/${OUT} >> ${SAMPLE}.realign_sentieon.log 2>&1
 EXITCODE=$?
 trap - INT TERM EXIT
 
@@ -334,7 +346,7 @@ if [[ ${EXITCODE} -ne 0 ]]
 then
         logError "$0 stopped at line ${LINENO} with exit code ${EXITCODE}."
 fi
-logInfo "[SENTIEON] Deduplication Finished. Deduplicated BAM found at ${OUT}"
+logInfo "[Realigner] Realigned reads ${SAMPLE} to reference ${REFGEN}. Realigned BAM located at ${OUT}."
 
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -346,25 +358,20 @@ logInfo "[SENTIEON] Deduplication Finished. Deduplicated BAM found at ${OUT}"
 ## POST-PROCESSING
 #-------------------------------------------------------------------------------------------------------------------------------
 
-## Check for creation of output BAM and index. Open read permissions to the user group
+## Check for creation of realigned BAM and index. Open read permissions to the user group
 if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT} ]]
 then
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Output deduplicated BAM file ${OUT} is empty."
+        logError "$0 stopped at line ${LINENO}. \nREASON=Realigned BAM ${OUT} is empty."
 fi
-if [[ ! -s ${OUTPUT_DIRECTORY}/${OUTBAMIDX} ]]
+if [[ ! -s ${OUTPUT_DIRECTORY}/${OUT}.bai ]]
 then
 	EXITCODE=1
-        logError "$0 stopped at line ${LINENO}. \nREASON=Output deduplicated BAM index file ${OUTBAMIDX} is empty."
+        logError "$0 stopped at line ${LINENO}. \nREASON=Realigned BAM ${OUT}.bai is empty."
 fi
-
 chmod g+r ${OUTPUT_DIRECTORY}/${OUT}
-chmod g+r ${OUTPUT_DIRECTORY}/${OUTBAMIDX}
-chmod g+r ${DEDUPMETRICS}
-chmod g+r ${SCORETXT}
-
+chmod g+r ${OUTPUT_DIRECTORY}/${OUT}.bai
 #-------------------------------------------------------------------------------------------------------------------------------
-
 
 
 #-------------------------------------------------------------------------------------------------------------------------------

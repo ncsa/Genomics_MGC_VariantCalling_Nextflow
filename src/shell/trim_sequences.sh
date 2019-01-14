@@ -37,12 +37,12 @@ read -r -d '' DOCS << DOCS
                    -t 		<threads> 
                    -P 		paired-end reads (true/false)
                    -e		</path/to/env_profile_file>
-                   -D           </path/to/output_directory> 
+                   -O           </path/to/output_directory> 
 		   -d 		turn on debug mode 
 
  EXAMPLES:
  trim_sequences.sh -h
- trim_sequences.sh -s sample -l read1.fq -r read2.fq -A adapters.fa -C /path/to/cutadapt_directory -t 12 -P true -e /path/to/env_profile_file -D /path/to/output_directory -d
+ trim_sequences.sh -s sample -l read1.fq -r read2.fq -A adapters.fa -C /path/to/cutadapt_directory -t 12 -P true -e /path/to/env_profile_file -O /path/to/output_directory -d
 
 #############################################################################
 
@@ -152,7 +152,7 @@ then
 	exit 1
 fi
 
-while getopts ":hl:r:A:C:t:P:s:e:D:d" OPT
+while getopts ":hl:r:A:C:t:P:s:e:O:d" OPT
 do
 	case ${OPT} in
 		h )  # Flag to display usage
@@ -195,7 +195,7 @@ do
 			echo -e "\nDebug mode is ON.\n"
 			set -x
 			;;
-		D )  # Path to the output directory for output files
+		O )  # Path to output directory
 			OUTPUT_DIRECTORY=${OPTARG}
 			checkArg
 			;;

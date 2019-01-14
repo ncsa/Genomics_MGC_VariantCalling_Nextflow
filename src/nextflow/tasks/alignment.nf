@@ -14,7 +14,7 @@
 /*       -p        "Platform"                                  (Required)                  */
 /*       -K        "Chunk Size in Bases"                       (Required)                  */
 /*       -e        "Path to Environment Profile File"          (Required)                  */
-/*	 -D 	   "Path to Output Directory" 		       (Required)		   */
+/*	 -O 	   "Path to Output Directory" 		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -76,6 +76,6 @@ process Alignment{
 
    script:
        """
-       /bin/bash ${AlignmentScript} -P ${PairedEnd} -g ${Group} -l ${TrimmedInputRead1} -r ${TrimmedInputRead2} -s ${SampleName} -p ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -D ${AlignmentOutputDirectory} -e ${AlignEnvProfile}  ${DebugMode} 
+       /bin/bash ${AlignmentScript} -P ${PairedEnd} -g ${Group} -l ${TrimmedInputRead1} -r ${TrimmedInputRead2} -s ${SampleName} -p ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -O ${AlignmentOutputDirectory} -e ${AlignEnvProfile}  ${DebugMode} 
        """
 }

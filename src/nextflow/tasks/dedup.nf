@@ -8,7 +8,7 @@
 /*       -s        "Name of the sample"                        (Optional)                  */
 /*       -S        "Path to the Sentieon Tool"                 (Required)                  */ 
 /*       -e        "Path to Environment Profile File"          (Required)                  */
-/* 	 -D 	   "Path to Output Directory"		       (Required)		   */
+/* 	 -O 	   "Path to Output Directory"		       (Required)		   */
 /*       -d        "Debug Mode Specification"                  (Required)                  */
 /*******************************************************************************************/
 
@@ -50,6 +50,6 @@ process Deduplication{
 
    script:
        """
-       /bin/bash ${DedupScript} -b ${InputAlignedSortedBam} -s ${SampleName} -S ${Sentieon} -t ${SentieonThreads} -D ${DedupOutputDirectory} -e ${DedupEnvProfile}  ${DebugMode} 
+       /bin/bash ${DedupScript} -b ${InputAlignedSortedBam} -s ${SampleName} -S ${Sentieon} -t ${SentieonThreads} -O ${DedupOutputDirectory} -e ${DedupEnvProfile}  ${DebugMode} 
        """
 }
