@@ -30,7 +30,7 @@ SampleName = params.SampleName
 TrimSeqScript = params.TrimSeqScript
 DebugMode = params.DebugMode
 TrimEnvProfile = params.TrimEnvProfile
-TrimSequencesOutputDirectory = params.TrimSequencesOutputDirectory
+Trim_sequencesOutputDirectory = params.Trim_sequencesOutputDirectory
 
 process TrimSequences {
 
@@ -45,7 +45,7 @@ process TrimSequences {
       val SampleName              // Name of the Sample
       val TrimSeqScript           // Bash script that actually runs the trimming program
       val TrimEnvProfile 	  // File containing the environmental profile variables
-      val TrimSequencesOutputDirectory     // Directory where the outputs will be placed
+      val Trim_sequencesOutputDirectory     // Directory where the outputs will be placed
 
   output:
 //      file '${SampleName}.read1.trimmed.fq.gz' into trimmedFiles
@@ -53,7 +53,7 @@ process TrimSequences {
 
    script:
       """
-      /bin/bash $TrimSeqScript -P $PairedEnd -l $InputRead1 -r $InputRead2 -s $SampleName -A $Adapters -C $CutAdapt -t $CutAdaptThreads -e $TrimEnvProfile -O $TrimSequencesOutputDirectory $DebugMode
+      /bin/bash $TrimSeqScript -P $PairedEnd -l $InputRead1 -r $InputRead2 -s $SampleName -A $Adapters -C $CutAdapt -t $CutAdaptThreads -e $TrimEnvProfile -O $Trim_sequencesOutputDirectory $DebugMode
       """
 
 }
