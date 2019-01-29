@@ -1,13 +1,13 @@
 echo true
 
-process testHaplotyper {
+process RunHaplotyperTask {
 
 	output:
-	stdout into haplotyperOutput	
+	stdout into HaplotyperOutput	
 
 	shell:
 	"""
-	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/haplotyper.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/haplotyper.config 
+	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/haplotyper.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/haplotyper.config 
 	"""
 }
 

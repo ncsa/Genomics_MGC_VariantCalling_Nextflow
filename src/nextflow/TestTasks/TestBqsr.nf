@@ -1,13 +1,13 @@
 echo true
 
-process testBqsr {
+process RunBqsrTask {
 
 	output:
-	stdout into bqsrOutput	
+	stdout into BqsrOutput	
 
 	shell:
 	"""
-	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/bqsr.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/bqsr.config 
+	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/bqsr.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/bqsr.config 
 	"""
 }
 

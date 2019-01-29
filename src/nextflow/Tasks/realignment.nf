@@ -28,7 +28,7 @@ Sentieon = params.Sentieon
 SentieonThreads = params.SentieonThreads
 
 RealignmentScript = params.RealignmentScript
-RealignEnvProfile = file(params.RealignEnvProfile)
+RealignmentEnvProfile = file(params.RealignmentEnvProfile)
 RealignmentOutputDirectory = params.RealignmentOutputDirectory
 
 DebugMode = params.DebugMode
@@ -39,7 +39,7 @@ process Realignment{
 	file RefFai
 	file InputAlignedSortedDedupedBam
 	file InputAlignedSortedDedupedBamBai       
-	file RealignEnvProfile
+	file RealignmentEnvProfile
 	val RealignmentScript
 	val RealignmentOutputDirectory
 
@@ -56,6 +56,6 @@ process Realignment{
 
    script:
        """
-       /bin/bash ${RealignmentScript} -s ${SampleName} -b ${InputAlignedSortedDedupedBam} -G ${Ref} -k ${RealignmentKnownSites} -S ${Sentieon} -t ${SentieonThreads} -e ${RealignEnvProfile} -O ${RealignmentOutputDirectory}  ${DebugMode}
+       /bin/bash ${RealignmentScript} -s ${SampleName} -b ${InputAlignedSortedDedupedBam} -G ${Ref} -k ${RealignmentKnownSites} -S ${Sentieon} -t ${SentieonThreads} -e ${RealignmentEnvProfile} -O ${RealignmentOutputDirectory}  ${DebugMode}
        """
 }

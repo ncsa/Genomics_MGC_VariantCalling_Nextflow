@@ -1,10 +1,9 @@
 echo true
 
-process TrimSequences {	
+process RunTrim_sequencesTask {	
 	
 	output:
-	trimSequencesOutputFile = Channel.fromPath(params.Trim_sequencesOutputDirectory+params.SampleName+"read*.trimmed.fq.gz")
-	stdout into trimSequencesOutput	
+	stdout into Trim_sequencesOutput	
 
 	shell:
 	"""
@@ -12,13 +11,13 @@ process TrimSequences {
 	"""
 }
 
-process Alignment {
+process RunAlignmentTask {
 
 	input:
-	val preAlignmentFlag from trimSequencesOutput 	
+	val PreAlignmentFlag from Trim_sequencesOutput 	
 		
 	output:
-	stdout into alignmentOutput
+	stdout into AlignmentOutput
 
 	script:
 	if(params.PairedEnd == 'true')
@@ -31,13 +30,13 @@ process Alignment {
         """
 }
 
-process Deduplication {
+process RunDedupTask {
 
         input:
-        val preDeduplicationFlag from alignmentOutput
+        val PreDedupFlag from AlignmentOutput
 
         output:
-        stdout into deduplicationOutput
+        stdout into DedupOutput
 
         shell:
         """

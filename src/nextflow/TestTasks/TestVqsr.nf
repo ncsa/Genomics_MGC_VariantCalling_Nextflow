@@ -1,13 +1,13 @@
 echo true
 
-process testVqsr {
+process RunVqsrTask {
 
 	output:
-	stdout into vqsrOutput	
+	stdout into VqsrOutput	
 
 	shell:
 	"""
-	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/vqsr.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/vqsr.config 
+	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/vqsr.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/vqsr.config 
 	"""
 }
 

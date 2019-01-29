@@ -1,56 +1,56 @@
 echo true
 
-process Realignment {	
+process RunRealignmentTask {	
 	
 	output:
-	stdout into realignmentOutput	
+	stdout into RealignmentOutput	
 
 	shell:
 	"""
-	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/realignment.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/db2.config  
+	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/realignment.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/design_block2.config
 	"""
 }
 
-process Bqsr {
+process RunBqsrTask {
 	
 	input:
-	val preBqsrFlag from realignmentOutput
+	val PreBqsrFlag from RealignmentOutput
 
         output:
-        stdout into bqsrOutput
+        stdout into BqsrOutput
 
         shell:
         """
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/bqsr.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/db2.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai"
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/bqsr.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/design_block2.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai"
         """
 }
 
-process Haplotyper {
+process RunHaplotyperTask {
 
 	input:
-	val preHaplotyperFlag from bqsrOutput
+	val PreHaplotyperFlag from BqsrOutput
 
 	output:
-	stdout into haplotyperOutput
+	stdout into HaplotyperOutput
 
 	shell:
         """
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/haplotyper.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/db2.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai" --RecalTable ${params.BQSROutputDirectory}"/"${params.SampleName}".recal_data.table"
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/haplotyper.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/design_block2.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai" --RecalTable ${params.BQSROutputDirectory}"/"${params.SampleName}".recal_data.table"
 
 	"""
 }
 
-process Vqsr {
+process RunVqsrTask {
 
 	input:
-	val preVqsrFlag from haplotyperOutput
+	val PreVqsrFlag from HaplotyperOutput
 
         output:
-        stdout into vqsrOutput
+        stdout into VqsrOutput
 
         shell:
         """
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/vqsr.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/db2.config --InputVCF ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf" --InputVCFIdx ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf.idx"
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/vqsr.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/design_block2.config --InputVCF ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf" --InputVCFIdx ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf.idx"
         """
 }
 

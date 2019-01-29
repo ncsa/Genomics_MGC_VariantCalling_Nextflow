@@ -1,105 +1,104 @@
 echo true
 
-process TrimSequences {	
+process RunTrim_sequencesTask {	
 	
 	output:
-	trimSequencesOutputFile = Channel.fromPath(params.TrimSequencesOutputDirectory+params.SampleName+"read*.trimmed.fq.gz")
-	stdout into trimSequencesOutput	
+	stdout into Trim_sequencesOutput	
 
 	shell:
 	"""
-	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/trim_sequences.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config  
+	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/trim_sequences.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config  
 	"""
 }
 
-process Alignment {
+process RunAlignmentTask {
 
 	input:
-	val preAlignmentFlag from trimSequencesOutput 	
+	val PreAlignmentFlag from Trim_sequencesOutput 	
 		
 	output:
-	stdout into alignmentOutput
+	stdout into AlignmentOutput
 
 	script:
 	if(params.PairedEnd == 'true')
 	"""
-	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/alignment.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config --TrimmedInputRead1 ${params.TrimSequencesOutputDirectory}"/"${params.SampleName}".read1.trimmed.fq.gz" --TrimmedInputRead2 ${params.TrimSequencesOutputDirectory}"/"${params.SampleName}".read2.trimmed.fq.gz"
+	nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/alignment.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config --TrimmedInputRead1 ${params.Trim_sequencesOutputDirectory}"/"${params.SampleName}".read1.trimmed.fq.gz" --TrimmedInputRead2 ${params.Trim_sequencesOutputDirectory}"/"${params.SampleName}".read2.trimmed.fq.gz"
 	"""
 	else if(params.PairedEnd == 'false')
         """
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/alignment.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config --TrimmedInputRead1 ${params.TrimSequencesOutputDirectory}"/"${params.SampleName}".read1.trimmed.fq.gz"  --TrimmedInputRead2 null
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/alignment.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config --TrimmedInputRead1 ${params.Trim_sequencesOutputDirectory}"/"${params.SampleName}".read1.trimmed.fq.gz"  --TrimmedInputRead2 null
         """
 }
 
-process Deduplication {
+process RunDedupTask {
 
         input:
-        val preDeduplicationFlag from alignmentOutput
+        val PreDedupFlag from AlignmentOutput
 
         output:
-        stdout into deduplicationOutput
+        stdout into DedupOutput
 
         shell:
         """
         ls -l
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/dedup.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config --InputAlignedSortedBam ${params.AlignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.bam" --InputAlignedSortedBamBai ${params.AlignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.bam.bai"
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/dedup.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config --InputAlignedSortedBam ${params.AlignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.bam" --InputAlignedSortedBamBai ${params.AlignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.bam.bai"
 
         """
 }
 
-process Realignment {
+process RunRealignmentTask {
 
 	input:
-	val preRealignmentFlag from deduplicationOutput
+	val PreRealignmentFlag from DedupOutput
 
         output:
-        stdout into realignmentOutput
+        stdout into RealignmentOutput
 
         shell:
         """
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/realignment.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config --RefFai ${params.RefFai} --InputAlignedSortedDedupedBam ${params.AlignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.bam" --InputAlignedSortedDedupedBamBai ${params.AlignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.bam.bai"
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/realignment.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config --RefFai ${params.RefFai} --InputAlignedSortedDedupedBam ${params.DedupOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.bam" --InputAlignedSortedDedupedBamBai ${params.DedupOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.bam.bai"
         """
 }
 
-process Bqsr {
+process RunBqsrTask {
 
         input:
-        val preBqsrFlag from realignmentOutput
+        val PreBqsrFlag from RealignmentOutput
 
         output:
-        stdout into bqsrOutput
+        stdout into BqsrOutput
 
         shell:
         """
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/bqsr.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai"
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/bqsr.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai"
         """                                                                                                              
 }
 
-process Haplotyper {
+process RunHaplotyperTask {
 
         input:
-        val preHaplotyperFlag from bqsrOutput
+        val PreHaplotyperFlag from BqsrOutput
 
         output:
-        stdout into haplotyperOutput
+        stdout into HaplotyperOutput
 
         shell:
         """
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/haplotyper.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai" --RecalTable ${params.BQSROutputDirectory}"/"${params.SampleName}".recal_data.table"                                                                                                                       
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/haplotyper.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config --InputAlignedSortedDedupedRealignedBam ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam" --InputAlignedSortedDedupedRealignedBamBai ${params.RealignmentOutputDirectory}"/"${params.SampleName}".aligned.sorted.deduped.realigned.bam.bai" --RecalTable ${params.BQSROutputDirectory}"/"${params.SampleName}".recal_data.table"                                                                                                                       
                                                                                                                          
         """                                                                                                              
 }
 
-process Vqsr {
+process RunVqsrTask {
 
         input:
-        val preVqsrFlag from haplotyperOutput                                                                            
+        val PreVqsrFlag from HaplotyperOutput                                                                            
                                                                                                                          
         output:                                                                                                          
-        stdout into vqsrOutput                                                                                           
+        stdout into VqsrOutput                                                                                           
                                                                                                                          
         shell:                                                                                                           
         """                                                                                                              
-        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nf_scripts/vqsr.nf -c /projects/bioinformatics/PrakruthiWork/nf_config/workflow.config --InputVCF ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf" --InputVCFIdx ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf.idx"
+        nextflow run /projects/bioinformatics/PrakruthiWork/Genomics_MGC_VariantCalling_Nextflow/src/nextflow/Tasks/vqsr.nf -c /projects/bioinformatics/PrakruthiWork/NextflowConfig/workflow.config --InputVCF ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf" --InputVCFIdx ${params.HaplotyperOutputDirectory}"/"${params.SampleName}".vcf.idx"
         """                                                                                                              
 } 
