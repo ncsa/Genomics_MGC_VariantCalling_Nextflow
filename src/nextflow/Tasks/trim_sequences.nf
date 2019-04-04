@@ -20,6 +20,7 @@ echo true
 
 
 /** Import Variables */
+TrimMultinode = params.TrimMultinode
 TrimSeqScript = params.TrimSeqScript						// Bash script that actually runs the trimming program
 PairedEnd = params.PairedEnd							// Is input FASTQ paired ended?
 InputRead1 = params.InputRead1							// Sample left read input(s) 
@@ -66,6 +67,8 @@ if (PairedEnd == "true") {
 
 	process TrimSequencesPairedEnd {
 
+		label TrimMultinode == "true" && Multilane == true ? "TrimMN" : null
+
                 input:
                 val TrimSeqScript                                       // Bash script that actually runs the trimming program
                 val PairedEnd                                           // Is input FASTQ paired ended?
@@ -87,7 +90,6 @@ if (PairedEnd == "true") {
                         mv ${SampleName}Lane${laneNumber}.cutadapt.log $Trim_sequencesOutputDirectory
                         mv ${SampleName}Lane${laneNumber}.trimming.TBD.log $Trim_sequencesOutputDirectory
 			"""
-
                 else
 			"""
 			/bin/bash $TrimSeqScript -P $PairedEnd -l $InputRead1 -r $InputRead2 -s ${SampleName} -A $Adapters -C $CutAdapt -t $CutAdaptThreads -e $TrimEnvProfile -O $Trim_sequencesOutputDirectory $DebugMode
@@ -102,6 +104,8 @@ if (PairedEnd == "true") {
 else if (PairedEnd == "false") {
 
         process TrimSequencesSingleEnd {
+
+		label TrimMultinode == "true" && Multilane == true ? "TrimMN" : null	
 
                 input:
 	     	val TrimSeqScript           				// Bash script that actually runs the trimming program

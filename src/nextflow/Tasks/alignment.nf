@@ -26,6 +26,7 @@ echo true
 
 
 /** Import variables */
+AlignmentMultinode = params.AlignmentMultinode
 AlignmentScript = params.AlignmentScript					// Bash script running alignment
 PairedEnd = params.PairedEnd							// Is input FASTQ paired ended?
 Trim_sequencesOutputDirectory = params.Trim_sequencesOutputDirectory		// Ouput folder from Trimming step
@@ -97,35 +98,37 @@ if (PairedEnd == "true") {
 	trimmedInputRead2Channel = Channel.from(trimmedInputRead2List)
 
 	process AlignmentPairedEnd{
+		
+		label AlignmentMultinode == "true" && Multilane == true ? "AlignMN" : null
 
-	   input:
-	       file Ref
-	       file RefAmb
-	       file RefAnn
-	       file RefBwt
-	       file RefPac
-	       file RefSa
-	       
-	       val TrimmedInputRead1 from trimmedInputRead1Channel
-	       val TrimmedInputRead2 from trimmedInputRead2Channel
-	       val laneNumber from laneChannel
-	       file AlignEnvProfile      
+		input:
+		file Ref
+		file RefAmb
+		file RefAnn
+		file RefBwt
+		file RefPac
+		file RefSa
 
-	       val SampleName
-	       val Platform
-	       val PairedEnd
-	       val ChunkSize
-	       val SentieonThreads
+		val TrimmedInputRead1 from trimmedInputRead1Channel
+		val TrimmedInputRead2 from trimmedInputRead2Channel
+		val laneNumber from laneChannel
+		file AlignEnvProfile      
 
-	       val AlignmentScript      
-	       val AlignmentOutputDirectory
-	       val Sentieon       
+		val SampleName
+		val Platform
+		val PairedEnd
+		val ChunkSize
+		val SentieonThreads
 
-	       val DebugMode
+		val AlignmentScript      
+		val AlignmentOutputDirectory
+		val Sentieon       
+
+		val DebugMode
 
 	     
-	   script:
-	       if (Multilane == true)
+		script:
+		if (Multilane == true)
 		       """
 		       /bin/bash ${AlignmentScript} -P ${PairedEnd} -l ${TrimmedInputRead1} -r ${TrimmedInputRead2} -s ${SampleName}Lane${laneNumber}.aligned.sorted -p ${Platform} -f ${Platform}Lane${laneNumber} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -e ${AlignEnvProfile} -F ${SharedFunctionScript} -L ${Library} -c ${SequencingCenter} -o \"\'${BWAExtraOption}\'\" ${DebugMode}
 		       mv ${SampleName}Lane${laneNumber}.aligned.sorted.bam ${AlignmentOutputDirectory}
@@ -134,7 +137,7 @@ if (PairedEnd == "true") {
 		       mv ${SampleName}Lane${laneNumber}.aligned.sorted.alignment.TBD.log ${AlignmentOutputDirectory}	 
 		       """
 
-	       else
+		else
 		       """     
 		       /bin/bash ${AlignmentScript} -P ${PairedEnd} -l ${TrimmedInputRead1} -r ${TrimmedInputRead2} -s ${SampleName}.aligned.sorted -p ${Platform} -f ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -e ${AlignEnvProfile} -F ${SharedFunctionScript} -L ${Library} -c ${SequencingCenter} -o \"\'${BWAExtraOption}\'\" ${DebugMode} 
 		       mv ${SampleName}.aligned.sorted.bam ${AlignmentOutputDirectory}
@@ -147,33 +150,35 @@ if (PairedEnd == "true") {
 } else if (PairedEnd == "false") {
         process AlignmentSingleEnd{
 
-           input:
-               file Ref
-               file RefAmb
-               file RefAnn
-               file RefBwt
-               file RefPac
-               file RefSa
+		label AlignmentMultinode == "true" && Multilane == true ? "AlignMN" : null
 
-               val TrimmedInputRead1 from trimmedInputRead1Channel
-               val laneNumber from laneChannel
-               file AlignEnvProfile
+		input:
+		file Ref
+		file RefAmb
+		file RefAnn
+		file RefBwt
+		file RefPac
+		file RefSa
 
-               val SampleName
-               val Platform
-               val PairedEnd
-               val ChunkSize
-               val SentieonThreads
+		val TrimmedInputRead1 from trimmedInputRead1Channel
+		val laneNumber from laneChannel
+		file AlignEnvProfile
 
-               val AlignmentScript
-               val AlignmentOutputDirectory
-               val Sentieon
+		val SampleName
+		val Platform
+		val PairedEnd
+		val ChunkSize
+		val SentieonThreads
 
-               val DebugMode
+		val AlignmentScript
+		val AlignmentOutputDirectory
+		val Sentieon
 
-	   script:
+		val DebugMode
 
-	       if (Multilane == true)
+		script:
+
+		if (Multilane == true)
 		       """
 		       /bin/bash ${AlignmentScript} -P ${PairedEnd} -l ${TrimmedInputRead1} -r "null" -s ${SampleName}Lane${laneNumber}.aligned.sorted -p ${Platform} -f ${Platform}Lane${laneNumber} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -e ${AlignEnvProfile} -F ${SharedFunctionScript} -L ${Library} -c ${SequencingCenter} -o \"\'${BWAExtraOption}\'\" ${DebugMode}
 		       mv ${SampleName}Lane${laneNumber}.aligned.sorted.bam ${AlignmentOutputDirectory}
@@ -182,7 +187,7 @@ if (PairedEnd == "true") {
 		       mv ${SampleName}Lane${laneNumber}.aligned.sorted.alignment.TBD.log ${AlignmentOutputDirectory}
 		       """
 
-	       else
+		else
 		       """
 		       /bin/bash ${AlignmentScript} -P ${PairedEnd} -l ${TrimmedInputRead1} -r "null" -s ${SampleName}.aligned.sorted -p ${Platform} -f ${Platform} -G ${Ref} -K ${ChunkSize} -S ${Sentieon} -t ${SentieonThreads} -e ${AlignEnvProfile} -F ${SharedFunctionScript} -L ${Library} -c ${SequencingCenter} -o \"\'${BWAExtraOption}\'\" ${DebugMode}
 		       mv ${SampleName}.aligned.sorted.bam ${AlignmentOutputDirectory}
