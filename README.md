@@ -1,5 +1,5 @@
 # Haplotype Variant Calling with Sentieon on Nextflow
-This repo is a variant calling pipeline that uses [sentieon](https://www.sentieon.com/) in [Nextflow](https://www.nextflow.io/) workflow management language, for use in detecting single nucleotide polymorphisms (SNP) and short insertion deletion variants. Nextflow-based implementation of [Cromwell-WDL based MayomicsVC workflow](https://github.com/ncsa/MayomicsVC).
+This repo is a variant calling pipeline that uses [sentieon](https://www.sentieon.com/) in [Nextflow](https://www.nextflow.io/) workflow management language, for use in detecting single nucleotide polymorphisms (SNP) and short insertion deletion variants. Nextflow-based implementation of Cromwell-WDL based [MayomicsVC workflow](https://github.com/ncsa/MayomicsVC).
 
 ## Acknowledgements
 This work was a product of the Mayo Clinic and Illinois Strategic Alliance for Technology-Based Healthcare. Special thanks for the funding provided by the Mayo Clinic Center for Individualized Medicine and the Todd and Karen Wanek Program for Hypoplastic Left Heart Syndrome. We also thank the Interdisciplinary Health Sciences Institute, UIUC Institute for Genomic Biology and the National Center for Supercomputing Applications for their generous support and access to resources. We particularly acknowledge the support of Keith Stewart, M.B., Ch.B., Mayo Clinic/Illinois Grand Challenge Sponsor and Director of the Mayo Clinic Center for Individualized Medicine. Many thanks to the Sentieon team for consultation and advice on the Sentieon variant calling software.
@@ -38,6 +38,177 @@ The standard multi-lane sample pipeline for this workflow is as follows:
 (Image here)
 
 **IMPORTANT NOTE:** This workflow works chronologically. Which means to conduct one process, the previous processes must be done first. Although it is possible to do each step separately, the output of previous steps must still be present as an input for the next step. For a clear visual which process requires which process input, please refer to diagrams provided.
+
+## Installation and Dependencies
+
+### Dependencies
+
+- [Nextflow](https://www.nextflow.io/) 0.30.1.4844 or newer is recommeded.
+- [Sentieon](https://www.sentieon.com/) (Propreitary software).
+
+### Workflow Installation
+
+Clone this repository
+
+## User Guide
+
+### Data Preparation
+For a complete process, this workflow requires:
+- Sample read files (usually fastq files)
+- Reference fasta file, indexed
+- Extra Variant Calling Foramat (VCF) files with known SNPs
+
+### VC_workflow config Parameters
+
+This workflow requires `/NextflowConfig/VC_workflow.config` to be properly filled, where the all information will be taken in from the user and processed by the workflow. In the file, only parameters within `params{}` scope should be filled.
+
+**Note:** String parameters need quotation marks ("") in the beginning and end of the string.
+
+#### Nextflow Parameters
+
+**`NextflowExecutable`**
+
+**STRING**
+
+Path to nextflow executable
+
+**`NextflowScriptsDir`**
+
+**STRING**
+
+Absolute path to the directory of process nextflow scripts, `/src/nextflow/Tasks`.
+
+**`NextflowShellDir`**
+
+**STRING**
+
+Absolute path to the directory of process shell scripts used by nextflow, `/src/shell`
+
+**`ConfigsDir`**
+
+**STRING**
+
+Absolute path to the directory of where this config file is, `/src/NextflowConfig`.
+
+#### General Parameters for Sentieon Workflow
+
+**`SampleName`**
+
+**STRING**
+
+The name of sample to use as prefix of output files.
+
+**`PairedEnd`**
+
+**STRING**
+
+"true" or "false", parameter indicating the nature of the fastq reads. Whether it is paired reads or single reads.
+
+**`DebugMode`**
+
+**STRING**
+
+"-d" or "", when set as "-d" the workflow will be more verbose.
+
+**`Platform`**
+
+**STRING**
+
+The platform in which the reads were sequenced, will be used for labeling. Example: "Illumina".
+
+**`Sentieon`**
+
+**STRING**
+
+Path to Sentieon **head directory**, not the executable.
+
+**`SentieonThreads`**
+
+**STRING**
+
+Number of threads, surrounded by quotation marks. Example: "24" notice the quotation marks around the number
+
+**`SharedFunctionScript`**
+
+**STRING**
+
+Path to shared function script within NextflowShellDir specified above. By default, this is filled by: `/src/shell/shared_functions.sh`. 
+
+**`InputRead1`**
+
+**STRING**
+
+Path to left reads for paired-read samples , or path to reads in single-read samples. 
+For multi-lane samples, please use a comma (,) for delimiter, without whitespace. Examples:
+
+Single-lane sample:
+
+`InputRead1 = "/path/to/read_1.fq"`
+
+Multi-lane samples:
+
+`InputRead1 = "/path/to/read_1_lane_1.fq","/path/to/read_1_lane_2.fq"`
+
+**`InputRead2`**
+
+**STRING**
+
+Path to right reads for paired-read samples. Fill "", for single-read samples. For multi-lane samples, please use a comma (',') for delimiter, without whitespace, as InputRead1.
+
+**NOTE**: The lanes are ordered by index, so it the input string should be consistent with the samples above.
+
+Example:
+
+`InputRead1 = "/path/to/read_1_lane_1.fq","/path/to/read_1_lane_2.fq"`
+
+`InputRead2 = "/path/to/read_2_lane_1.fq","/path/to/read_2_lane_2.fq"`
+
+The lanes **must** be consistent so they do not get mixed up.
+
+#### Parameters for specific processes in the workflow
+
+**`(PROCESSNAME)Script`**
+
+**STRING**
+
+Absolute path to the shell script for the process. 
+
+Example:
+
+`TrimSeqScript = "/path/to/Genomics_MGC_VariantCalling_Nextflow/src/shell/trim_sequences.sh"`
+
+**`(PROCESSNAME)OutputDirectory`**
+
+**STRING**
+
+Absolute path to the output directory the specific process
+
+**`(PROCESSNAME)Profile`**
+
+**STRING**
+
+Absolute path to environment profile file. This script generally has one line, setting the SENTIEON_LICENSE variable to a some license server. This is the variable sentieon uses to get the details of the process, to monitor the use of sentieon software.
+
+Example:
+
+`RealignEnvProfile = "/path/to/env_file.txt"`
+
+Within `RealignEnvProfile`:
+
+`export SENTIEON=(address to license server)`
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
