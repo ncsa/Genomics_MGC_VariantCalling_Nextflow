@@ -4,6 +4,29 @@ This repo is a variant calling pipeline that uses [sentieon](https://www.sentieo
 ## Acknowledgements
 This work was a product of the Mayo Clinic and Illinois Strategic Alliance for Technology-Based Healthcare. Special thanks for the funding provided by the Mayo Clinic Center for Individualized Medicine and the Todd and Karen Wanek Program for Hypoplastic Left Heart Syndrome. We also thank the Interdisciplinary Health Sciences Institute, UIUC Institute for Genomic Biology and the National Center for Supercomputing Applications for their generous support and access to resources. We particularly acknowledge the support of Keith Stewart, M.B., Ch.B., Mayo Clinic/Illinois Grand Challenge Sponsor and Director of the Mayo Clinic Center for Individualized Medicine. Many thanks to the Sentieon team for consultation and advice on the Sentieon variant calling software.
 
+**Table of Contents**
+ - [Haplotype Variant Calling with Sentieon on Nextflow](#haplotype-variant-calling-with-sentieon-on-nextflow)
+   - [Acknowledgements](#acknowledgements)
+   - [Intended pipeline architecture and function](#intended-pipeline-architecture-and-function)
+   - [Installation and Dependencies](#installation-and-dependencies)
+      * [Dependencies](#dependencies)
+      * [Workflow Installation](#workflow-installation)
+   - [User Guide](#user-guide)
+     * [Data Preparation](#data-preparation)
+     * [VC_workflow config Parameters](#vc_workflow-config-parameters)
+        - [Nextflow Parameters](#nextflow-parameters)
+        - [General Parameters for Sentieon Workflow](#general-parameters-for-sentieon-workflow)
+        - [Specific Parameters for Sentieon Workflow](#specific-parameters-for-sentieon-workflow)
+            * [Trim sequences](#trim-sequences)
+            * [Alignment](#alignment)
+            * [Realignment](#realignment)
+            * [BQSR](#bqsr)
+            * [Haplotyper](#haplotyper)
+            * [VQSR](#vqsr)
+     * [Executing nextflow application](#executing-nextflow-application)
+     * [Logging functionality](#logging-functionality)
+
+     
 ## Intended pipeline architecture and function
 
 Sentieon follows the [GATK best practices](https://software.broadinstitute.org/gatk/best-practices/), which takes in sequencing reads and uses alignment as a base. The aligned reads will then be further analyzed to call both indels and snps. This pipeline supports single-end read and paired-end read. Additionally, this pipeline also supports both single-lane samples and multi-lane samples.
@@ -165,7 +188,7 @@ Example:
 
 The lanes **must** be consistent so they do not get mixed up.
 
-#### Parameters for specific processes in the workflow
+#### Specific Parameters for Sentieon Workflow
 
 **`(PROCESSNAME)Script`**
 
@@ -197,8 +220,6 @@ Within `RealignEnvProfile`:
 
 `export SENTIEON=(address to license server)`
 
-
-#### Specific Parameters for processes in the Workflow
 
 ##### Trim sequences
 
@@ -388,7 +409,23 @@ Extra options for haplotyper, refer to [sentieon haplotyper documentation](https
 (Fill in Later)
 
 
+### Executing Nextflow Application
 
+The suggested practice to execute nextflow is to place the folder containing binary executable for nextflow in the PATH environment or to use full path to the nextflow executable file.
+
+Example:
+```
+cd (head_output_directory)
+nextflow run /src/nextflow/Workflow/VC_workflow.nf -c /NextflowConfig/VC_workflow
+```
+
+### Logging Functionality
+
+Nextflow creates `work` folder where the command `nextflow (script.nf)` is run. Within the `work` folder, there will be nested folders, containing the log of individual processes. In the stdout of running script, there will be lines that is similar to this:
+
+`[73/a3f6d2] Submitted process > test`
+
+`test` is the process name. `[73/a3f6d2]` indicates the folder name within work folder when the user can locate the log for the specific process. More accurately, within `/work/73/` there might be several folders, and `a3f6d2` is the first 6 characters of the nested folder within `/work/73/`. Inside the folder specific to the process, such as `/work/73/a3f6d2...`, there are several log files that can be used for debugging or troubleshooting.
 
 
 
