@@ -19,7 +19,9 @@ The standard pipeline for this workflow is as follows:
 
 **Figure 1:** Standard pipeline of Haplotype Variant Calling with Sentieon on Nextflow
 
-(Image here)
+<p align="center">
+  <img src="/images/Diagram.png" width="100%">
+</p>
 
 This pipeline also supports multi-lane samples, allowing processing of fastq files from the same sample. This method is often use to increase overall data quality.
 
@@ -33,10 +35,6 @@ The standard multi-lane sample pipeline for this workflow is as follows:
   7. Haploype variant calling via Sentieon Haplotyper algorithm
   8. Variant quality score recalibration (VQSR)
   
-**Figure 2:** Standard pipeline of multi-lane Haplotype Variant Calling with Sentieon on Nextflow
-
-(Image here)
-
 **IMPORTANT NOTE:** This workflow works chronologically. Which means to conduct one process, the previous processes must be done first. Although it is possible to do each step separately, the output of previous steps must still be present as an input for the next step. For a clear visual which process requires which process input, please refer to diagrams provided.
 
 ## Installation and Dependencies
