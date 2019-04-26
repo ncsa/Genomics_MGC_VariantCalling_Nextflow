@@ -388,25 +388,33 @@ Path to dbSNP index file
 
 Extra options for haplotyper, refer to [sentieon haplotyper documentation](https://support.sentieon.com/manual/usages/general/?highlight=haplotyper#haplotyper-algorithm)
 
+**NOTE:** Must be enclosed in a single-quotation within the double quotes "'(INPUT)'"
+
 ##### VQSR
 
 **`VqsrSnpResourceString`**
 
 **STRING**
 
-(Fill in Later)
+Resources for SNP VQSR, refer to [sentieon VQSR documentation(https://support.sentieon.com/manual/usages/general/?highlight=vqsr#varcal-algorithm)
+
+**NOTE:** Must be enclosed in a single-quotation within the double quotes "'(INPUT)'"
 
 **`VqsrIndelResourceString`**
 
 **STRING**
 
-(Fill in Later)
+Resources for Indel VQSR, refer to [sentieon VQSR documentation(https://support.sentieon.com/manual/usages/general/?highlight=vqsr#varcal-algorithm)
+
+**NOTE:** Must be enclosed in a single-quotation within the double quotes "'(INPUT)'"
 
 **`AnnotateText`**
 
 **STRING**
 
-(Fill in Later)
+Refer to --annotation option [sentieon VQSR documentation(https://support.sentieon.com/manual/usages/general/?highlight=vqsr#varcal-algorithm)
+
+**NOTE:** Must be enclosed in a single-quotation within the double quotes "'(INPUT)'"
 
 
 ### Executing Nextflow Application
