@@ -89,77 +89,53 @@ This workflow requires `/NextflowConfig/VC_workflow.config` to be properly fille
 
 #### Nextflow Parameters
 
-**`NextflowExecutable`**
-
-**STRING**
+**`NextflowExecutable`** - **STRING**
 
 Path to nextflow executable
 
-**`NextflowScriptsDir`**
-
-**STRING**
+**`NextflowScriptsDir`** - **STRING** 
 
 Absolute path to the directory of process nextflow scripts, `/src/nextflow/Tasks`.
 
-**`NextflowShellDir`**
-
-**STRING**
+**`NextflowShellDir`** - **STRING**
 
 Absolute path to the directory of process shell scripts used by nextflow, `/src/shell`
 
-**`ConfigsDir`**
-
-**STRING**
+**`ConfigsDir`** - **STRING**
 
 Absolute path to the directory of where this config file is, `/src/NextflowConfig`.
 
 #### General Parameters for Sentieon Workflow
 
-**`SampleName`**
-
-**STRING**
+**`SampleName`** - **STRING**
 
 The name of sample to use as prefix of output files.
 
-**`PairedEnd`**
-
-**STRING**
+**`PairedEnd`** - **STRING**
 
 "true" or "false", parameter indicating the nature of the fastq reads. Whether it is paired reads or single reads.
 
-**`DebugMode`**
-
-**STRING**
+**`DebugMode`** - **STRING**
 
 "-d" or "", when set as "-d" the workflow will be more verbose.
 
-**`Platform`**
-
-**STRING**
+**`Platform`** - **STRING**
 
 The platform in which the reads were sequenced, will be used for labeling. Example: "Illumina".
 
-**`Sentieon`**
-
-**STRING**
+**`Sentieon`** - **STRING**
 
 Path to Sentieon **head directory**, not the executable.
 
-**`SentieonThreads`**
-
-**STRING**
+**`SentieonThreads`** - **STRING**
 
 Number of threads, surrounded by quotation marks. Example: "24" notice the quotation marks around the number
 
-**`SharedFunctionScript`**
-
-**STRING**
+**`SharedFunctionScript`** - **STRING**
 
 Path to shared function script within NextflowShellDir specified above. By default, this is filled by: `/src/shell/shared_functions.sh`. 
 
-**`InputRead1`**
-
-**STRING**
+**`InputRead1`** - **STRING**
 
 Path to left reads for paired-read samples , or path to reads in single-read samples. 
 For multi-lane samples, please use a comma (,) for delimiter, without whitespace. Examples:
@@ -172,9 +148,7 @@ Multi-lane samples:
 
 `InputRead1 = "/path/to/read_1_lane_1.fq","/path/to/read_1_lane_2.fq"`
 
-**`InputRead2`**
-
-**STRING**
+**`InputRead2`** - **STRING**
 
 Path to right reads for paired-read samples. Fill "", for single-read samples. For multi-lane samples, please use a comma (',') for delimiter, without whitespace, as InputRead1.
 
@@ -190,9 +164,7 @@ The lanes **must** be consistent so they do not get mixed up.
 
 #### Specific Parameters for Sentieon Workflow
 
-**`(PROCESSNAME)Script`**
-
-**STRING**
+**`(PROCESSNAME)Script`** - **STRING**
 
 Absolute path to the shell script for the process. 
 
@@ -200,15 +172,11 @@ Example:
 
 `TrimSeqScript = "/path/to/Genomics_MGC_VariantCalling_Nextflow/src/shell/trim_sequences.sh"`
 
-**`(PROCESSNAME)OutputDirectory`**
-
-**STRING**
+**`(PROCESSNAME)OutputDirectory`** - **STRING**
 
 Absolute path to the output directory the specific process
 
-**`(PROCESSNAME)Profile`**
-
-**STRING**
+**`(PROCESSNAME)Profile`** - **STRING**
 
 Absolute path to environment profile file. This script generally has one line, setting the SENTIEON_LICENSE variable to a some license server. This is the variable sentieon uses to get the details of the process, to monitor the use of sentieon software.
 
@@ -223,168 +191,116 @@ Within `RealignEnvProfile`:
 
 ##### Trim sequences
 
-**`TrimMultinode`**
-
-**STRING**
+**`TrimMultinode`** - **STRING**
 
 Indicates if multiple nodes are used in the process for multilane samples. "true" or "false"
 
-**`TrimExecutor`**
-
-**STRING**
+**`TrimExecutor`** - **STRING**
 
 The type of executor that will be used. refer to nextflow executors [documentation](https://www.nextflow.io/docs/latest/executor.html)
 
-**`TrimQueue`**
-
-**STRING**
+**`TrimQueue`** - **STRING**
 
 Queue name in the cluster, refer to nextflow executor [documentation](https://www.nextflow.io/docs/latest/executor.html)
 
-**`TrimCpus`**
-
-**STRING**
+**`TrimCpus`** - **STRING**
 
 Number of cores per node for each process, refer to nextflow cpus [documentation](https://www.nextflow.io/docs/latest/process.html#cpus)
 
-**`TrimWalltime`**
-
-**STRING**
+**`TrimWalltime`** - **STRING**
 
 Walltime for individual process runs, refer to nextflow walltime [documentation](https://www.nextflow.io/docs/latest/process.html#process-time)
 
-**`TrimMaxNodes`**
-
-**INT**
+**`TrimMaxNodes`** - **INT**
 
 Maximum number of nodes to be used in parallel, refer to nextflow maxForks [documentation]('https://www.nextflow.io/docs/latest/process.html?highlight=maxforks#maxforks')
 
-**`Adapters`**
-
-**STRING**
+**`Adapters`** - **STRING**
 
 Path to adapter fasta files
 
-**`CutAdapt`**
-
-**STRING**
+**`CutAdapt`** - **STRING**
 
 Path to bin directory of Python executable with installed [CutAdapt](https://cutadapt.readthedocs.io/en/stable/)
 
-**`CutAdaptThreads`**
-
-**STRING**
+**`CutAdaptThreads`** - **STRING**
 
 The number of threads for CutAdapt
 
 ##### Alignment
 
-**`AlignmentMultinode`**
-
-**STRING**
+**`AlignmentMultinode`** - **STRING**
 
 Indicates if multiple nodes are used in the process for multilane samples. "true" or "false"
 
-**`AlignmentExecutor`**
-
-**STRING**
+**`AlignmentExecutor`** - **STRING**
 
 The type of executor that will be used. refer to nextflow executors [documentation](https://www.nextflow.io/docs/latest/executor.html)
 
-**`AlignmentQueue`**
-
-**STRING**
+**`AlignmentQueue`** - **STRING**
 
 Queue name in the cluster, refer to nextflow executor [documentation](https://www.nextflow.io/docs/latest/executor.html)
 
-**`AlignmentCpus`**
-
-**STRING**
+**`AlignmentCpus`** - **STRING**
 
 Number of cores per node for each process, refer to nextflow cpus [documentation](https://www.nextflow.io/docs/latest/process.html#cpus)
 
-**`AlignmentWalltime`**
-
-**STRING**
+**`AlignmentWalltime`** - **STRING**
 
 Walltime for individual process runs, refer to nextflow walltime [documentation](https://www.nextflow.io/docs/latest/process.html#process-time)
 
-**`AlignmentMaxNodes`**
-
-**INT**
+**`AlignmentMaxNodes`** - **INT**
 
 Maximum number of nodes to be used in parallel, refer to nextflow maxForks [documentation]('https://www.nextflow.io/docs/latest/process.html?highlight=maxforks#maxforks')
 
-**`Ref`**
-
-**STRING**
+**`Ref`** - **STRING**
 
 Path to reference genome fasta file
 
-**`Ref(Amb/Ann/Bwt/Pac/Sa)`**
-
-**STRING**
+**`Ref(Amb/Ann/Bwt/Pac/Sa)`** - **STRING**
 
 Path to reference index files generated by bwa aligners
 
-**`ChunkSize`**
-
-**STRING**
+**`ChunkSize`** - **STRING**
 
 Refer to [sentieon documentation](https://support.sentieon.com/manual/DNAseq_usage/dnaseq/)
 
-**`Library`**
-
-**STRING**
+**`Library`** - **STRING**
 
 Library variable for labeling purposes
 
-**`SequencingCenter`**
-
-**STRING**
+**`SequencingCenter`** - **STRING**
 
 Sequencing center variable for labeling purposes
 
-**`BWAExtraOption`**
-
-**STRING**
+**`BWAExtraOption`** - **STRING**
 
 Determines whether to make split reads as secondary, consult [sentieon documentation](https://support.sentieon.com/manual/usages/general/#bwa-binary)
 
 
 ##### Realignment
 
-**`RealignmentKnownSites`**
-
-**STRING**
+**`RealignmentKnownSites`** - **STRING**
 
 Path to vcf files with confirmed SNP sites (high confidence sites)
 
 ##### BQSR
 
-**`BQSRKnownSites`**
-
-**STRING**
+**`BQSRKnownSites`** - **STRING**
 
 Path to vcf files with confirmed SNP sites (high confidence sites)
 
 ##### Haplotyper
 
-**`DBSNP`**
-
-**STRING**
+**`DBSNP`** - **STRING**
 
 Path to dbSNP file
 
-**`DBSNPidk`**
-
-**STRING**
+**`DBSNPidk`** - **STRING**
 
 Path to dbSNP index file
 
-**`HaplotyperExtraOptions`**
-
-**STRING**
+**`HaplotyperExtraOptions`** - **STRING**
 
 Extra options for haplotyper, refer to [sentieon haplotyper documentation](https://support.sentieon.com/manual/usages/general/?highlight=haplotyper#haplotyper-algorithm)
 
@@ -392,25 +308,19 @@ Extra options for haplotyper, refer to [sentieon haplotyper documentation](https
 
 ##### VQSR
 
-**`VqsrSnpResourceString`**
-
-**STRING**
+**`VqsrSnpResourceString`** - **STRING**
 
 Resources for SNP VQSR, refer to [sentieon VQSR documentation(https://support.sentieon.com/manual/usages/general/?highlight=vqsr#varcal-algorithm)
 
 **NOTE:** Must be enclosed in a single-quotation within the double quotes "'(INPUT)'"
 
-**`VqsrIndelResourceString`**
-
-**STRING**
+**`VqsrIndelResourceString`** - **STRING**
 
 Resources for Indel VQSR, refer to [sentieon VQSR documentation(https://support.sentieon.com/manual/usages/general/?highlight=vqsr#varcal-algorithm)
 
 **NOTE:** Must be enclosed in a single-quotation within the double quotes "'(INPUT)'"
 
-**`AnnotateText`**
-
-**STRING**
+**`AnnotateText`** - **STRING**
 
 Refer to --annotation option [sentieon VQSR documentation(https://support.sentieon.com/manual/usages/general/?highlight=vqsr#varcal-algorithm)
 
