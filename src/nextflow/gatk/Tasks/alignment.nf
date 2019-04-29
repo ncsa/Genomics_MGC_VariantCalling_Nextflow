@@ -25,8 +25,7 @@
 /** Nextflow option so bash stdout will be displayed */
 echo false
 
-
-/** Import variables */
+/* *********************         Import input variables       ********************* */
 SampleName = params.SampleName							                // Sample name used for output
 Platform = params.Platform							                    // Name of sequencing platform used for sequencing DNA
 Library = params.Library	                    						// Library name
@@ -55,7 +54,9 @@ AlignmentScript = file(params.AlignmentScript)				            // Bash script run
 
 AlignmentMultinode = params.AlignmentMultinode
 
+DeliveryFolder_Alignment = params.DeliveryFolder_Alignment
 
+/* *********************         Prepare input channels       ********************* */
 InputRead1Channel = Channel.fromPath(InputRead1.tokenize(','))
 
 if (InputRead2.contains(',')){
@@ -66,49 +67,51 @@ if (InputRead2.contains(',')){
 
 PlatformUnitChannel = Channel.from(PlatformUnit.tokenize(','))
 
-/** Start Alignment */
+/* *********************         Start alignment process       ********************* */
 
 process Alignment{
-	
-	//label AlignmentMultinode == "true" && Multilane == true ? "AlignMN" : null
+
+    publishDir DeliveryFolder_Alignment
 
 	input:
-	val SampleName
-	val Platform
-    val Library
-    val PlatformUnit from PlatformUnitChannel
-    val CenterName
-	val PairedEnd
-	file InputRead1 from InputRead1Channel
-	val InputRead2 from InputRead2Channel
-	file Ref
-	file RefAmb
-	file RefAnn
-	file RefBwt
-	file RefPac
-	file RefSa
-    file BWAExe
-	val ChunkSizeInBases
-    val BWAExtraOptionsString
-    file SamtoolsExe
-	val BwaSamtoolsThreads
-    file BashSharedFunctions
- 	val DebugMode
-    
-    file BashPreamble
-	file AlignmentScript
+    	val SampleName
+    	val Platform
+        val Library
+        val PlatformUnit from PlatformUnitChannel
+        val CenterName
+    	val PairedEnd
+    	file InputRead1 from InputRead1Channel
+    	val InputRead2 from InputRead2Channel
+    	file Ref
+    	file RefAmb
+    	file RefAnn
+    	file RefBwt
+    	file RefPac
+    	file RefSa
+        file BWAExe
+    	val ChunkSizeInBases
+        val BWAExtraOptionsString
+        file SamtoolsExe
+    	val BwaSamtoolsThreads
+        file BashSharedFunctions
+     	val DebugMode
 
+        file BashPreamble
+    	file AlignmentScript
+
+    output:
+        file "${SampleName}.${PlatformUnit}.bam"  
+        file "${SampleName}.${PlatformUnit}.bam.bai" 
 
 	script:
-	if (PairedEnd == "true")
-	       """
-           source ${BashPreamble}
-	       /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
-	       """
-
-	else
-	       """
-	       source ${BashPreamble}
-	       /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r "null" -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
-	       """
+    	if (PairedEnd == "true")
+    	       """
+               source ${BashPreamble}
+    	       /bin/bash ${AlignmentScript} -s ${SampleName}.${PlatformUnit} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
+    	       """
+    	else
+    	       """
+    	       source ${BashPreamble}
+    	       /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r "null" -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
+    	       """
 }
