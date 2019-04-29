@@ -31,7 +31,7 @@ DebugMode = params.DebugMode					// Debug mode
 BashPreamble = file(params.BashPreamble)        // shell file to source before each process
 BashSharedFunctions = file(params.BashSharedFunctions) // Bash script with shared functions
 
-DedupScript = params.DedupScript				// Bash script running deduplication
+DedupScript = file(params.DedupScript)				// Bash script running deduplication
 
 process Deduplication{
    input:
@@ -54,6 +54,6 @@ process Deduplication{
    script:
        """
        source ${BashPreamble}
-       /bin/bash ${DedupScript} -s ${SampleName} -b ${InputBams} -S ${GATKExe} -J ${JavaExe} -e ${JavaOptionsString} -F ${BashSharedFunctions} {DebugMode}
+       /bin/bash ${DedupScript} -s ${SampleName} -b ${InputBams} -S ${GATKExe} -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} {DebugMode}
        """
 }
