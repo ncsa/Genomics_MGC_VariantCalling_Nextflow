@@ -23,7 +23,7 @@
 /*******************************************************************************************/
 
 /** Nextflow option so bash stdout will be displayed */
-echo true
+echo false
 
 
 /** Import variables */
@@ -41,35 +41,42 @@ RefAnn = file(params.RefAnn)                                            // Refer
 RefBwt = file(params.RefBwt)                                            // Reference indices
 RefPac = file(params.RefPac)                                            // Reference indices
 RefSa = file(params.RefSa)                                              // Reference indices
-BWAExe = file(params.BWAExe)                                                              // # Path to BWA executable
+BWAExe = file(params.BWAExe)                                            // Path to BWA executable
 ChunkSizeInBases = params.ChunkSizeInBases 	                    		// 10000000 to prevent different results based on thread count
 BWAExtraOptionsString = params.BWAExtraOptionsString   			        // BWA extra options
-SamtoolsExe = file(params.SamtoolsExe)                                                    // # Path to samtools executable
-BwaSamtoolsThreads = params.BwaSamtoolsThreads                                            // # Specifies the number of thread required per run
+SamtoolsExe = file(params.SamtoolsExe)                                  // Path to samtools executable
+BwaSamtoolsThreads = params.BwaSamtoolsThreads                          // Specifies the number of thread required per run
 
 BashSharedFunctions = file(params.BashSharedFunctions)	                // Shared function for variable checks
 DebugMode = params.DebugMode							                // Flag to enable debug mode
 
-BashPreamble = file(params.BashPreamble)                                                   // # Bash script to help control zombie processes
-AlignmentScript = params.AlignmentScript					            // Bash script running alignment
+BashPreamble = file(params.BashPreamble)                                // Bash script to help control zombie processes
+AlignmentScript = file(params.AlignmentScript)				            // Bash script running alignment
 
 AlignmentMultinode = params.AlignmentMultinode
 
 
 InputRead1Channel = Channel.fromPath(InputRead1.tokenize(','))
-InputRead2Channel = Channel.from(InputRead2.tokenize(','))
+
+if (InputRead2.contains(',')){
+    InputRead2Channel = Channel.fromPath(InputRead2.tokenize(','))
+} else {
+    InputRead2Channel = InputRead2
+}
+
+PlatformUnitChannel = Channel.from(PlatformUnit.tokenize(','))
 
 /** Start Alignment */
 
 process Alignment{
 	
-	label AlignmentMultinode == "true" && Multilane == true ? "AlignMN" : null
+	//label AlignmentMultinode == "true" && Multilane == true ? "AlignMN" : null
 
 	input:
 	val SampleName
 	val Platform
     val Library
-    val PlatformUnit
+    val PlatformUnit from PlatformUnitChannel
     val CenterName
 	val PairedEnd
 	file InputRead1 from InputRead1Channel
@@ -93,7 +100,7 @@ process Alignment{
 
 
 	script:
-	if (PairedEnd == true)
+	if (PairedEnd == "true")
 	       """
            source ${BashPreamble}
 	       /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
