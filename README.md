@@ -345,6 +345,12 @@ Nextflow creates `work` folder where the command `nextflow (script.nf)` is run. 
 
 `test` is the process name. `[73/a3f6d2]` indicates the folder name within work folder when the user can locate the log for the specific process. More accurately, within `/work/73/` there might be several folders, and `a3f6d2` is the first 6 characters of the nested folder within `/work/73/`. Inside the folder specific to the process, such as `/work/73/a3f6d2...`, there are several log files that can be used for debugging or troubleshooting.
 
+Additionally, Nextflow also creates a hidden file `.nextflow.log` in the folder where `nextflow run` command is executed. This file mainly contains meta information about each processes, regarding the nextflow process itself.
+
+If the user wants to conduct further tracing, the documentation on [tracing](https://www.nextflow.io/docs/latest/tracing.html) could be explored.
+
+
+
 
 
 
