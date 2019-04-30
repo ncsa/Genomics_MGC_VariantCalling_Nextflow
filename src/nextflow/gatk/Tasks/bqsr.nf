@@ -34,7 +34,8 @@ DeliveryFolder_Alignment = params.DeliveryFolder_Alignment
 
 /******************** Retrieve realigned bams from realignment output directory ************************/
 
-//BqsrKnownSitesChannel = Channel.fromPath(BqsrKnownSites.tokenize(',').collect())
+BqsrKnownSitesChannel = Channel.from(BqsrKnownSites.tokenize(',')).flatMap{ files(it) }.collect()
+BqsrKnownSitesIdxChannel = Channel.from(BqsrKnownSites.tokenize(',')).flatMap{ files(it+'.idx') }.collect()
 
 /*************************************               Start BQSR              ****************************/
 process BQSR{
@@ -50,7 +51,9 @@ process BQSR{
       	file RefFai
         file RefDict
 
-    	val BqsrKnownSites //from BqsrKnownSitesChannel
+    	file BqsrKnownSites from BqsrKnownSitesChannel
+    	file BqsrKnownSitesIdx from BqsrKnownSitesIdxChannel
+
         val GenomicInterval
         file GATKExe
         val ApplyBQSRExtraOptionsString
@@ -68,6 +71,6 @@ process BQSR{
    script:
        """
         source ${BashPreamble}
-       /bin/bash ${BqsrScript} -s ${SampleName} -b ${InputBams} -G ${Ref} -k ${BqsrKnownSites} -I ${GenomicInterval} -S ${GATKExe} -o \"\'${ApplyBQSRExtraOptionsString}\'\" -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} ${DebugMode}
+       /bin/bash ${BqsrScript} -s ${SampleName} -b ${InputBams} -G ${Ref} -k ${BqsrKnownSites.join(',')} -I ${GenomicInterval} -S ${GATKExe} -o \"\'${ApplyBQSRExtraOptionsString}\'\" -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} ${DebugMode}
        """
 }

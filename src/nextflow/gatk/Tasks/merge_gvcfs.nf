@@ -12,7 +12,7 @@ echo true
 SampleName = params.SampleName                  // Name of the Sample
 
 InputGvcfs = params.InputGvcfs                  // Input GVCF files 
-InputIdxs = Channel.fromPath(params.InputIdxs.tokenize(',')).collect() // Input GVCF Index
+InputIdxs = params.InputIdxs                    // Input GVCF Index
 
 GATKExe = file(params.GATKExe)                  // Path to GATK4 executable 
 JavaExe = file(params.JavaExe)                  // Path to Java8 executable
@@ -28,6 +28,9 @@ DeliveryFolder_HaplotyperVC = params.DeliveryFolder_HaplotyperVC
 
 /****************           Prepare needed input channels             *******************/ 
 
+InputGvcfsChannel = Channel.from(InputGvcfs.tokenize(',')).flatMap{ files(it) }.collect()
+InputIdxsChannel = Channel.fromPath(InputIdxs.tokenize(',')).collect()
+
 
 /*************************            Start haplotyper            ***********************/
 process Mergegvcfs {
@@ -37,8 +40,8 @@ process Mergegvcfs {
    input:
     	val SampleName
 
-    	val InputGvcfs
-	    file InputIdxs
+        file InputGvcfs from InputGvcfsChannel
+        file InputIdxs from InputIdxsChannel
 
         file GATKExe
         file JavaExe
@@ -57,6 +60,6 @@ process Mergegvcfs {
    script:
        """
        source ${BashPreamble}
-       /bin/bash ${MergeGvcfsScript} -s ${SampleName} -b ${InputGvcfs} -S ${GATKExe} -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} ${DebugMode}
+       /bin/bash ${MergeGvcfsScript} -s ${SampleName} -b ${InputGvcfs.join(',')} -S ${GATKExe} -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} ${DebugMode}
        """
 }
