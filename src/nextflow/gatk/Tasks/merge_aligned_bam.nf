@@ -24,10 +24,7 @@ DeliveryFolder_Alignment = params.DeliveryFolder_Alignment
 
 /* *********************           Input channels preparation           ********************* */
 
-//bamChannel = Channel.fromPath(AlignmentOutputDirectory + "/*.aligned.sorted.bam").collect()
-//indexChannel=Channel.fromPath(AlignmentOutputDirectory+"/*.aligned.sorted.bam.bai").collect()
-
-InputBamsChannel = InputBams 
+InputBamsChannel = Channel.from(InputBams.tokenize(',')).flatMap{ files(it) }.collect() 
 InputBaisChannel = Channel.fromPath(InputBais.tokenize(',')).collect()
 
 /* *********************            Start Merge process                ********************* */
@@ -36,7 +33,7 @@ process merge {
     publishDir DeliveryFolder_Alignment, mode: 'copy'
 
 	input:
-        val InputBam from InputBamsChannel
+        file InputBam from InputBamsChannel
         file InputBai from InputBaisChannel
 
     output:
@@ -45,7 +42,7 @@ process merge {
 	
 		"""
         source ${BashPreamble}
-		/bin/bash ${MergeBamScript} -b ${InputBam} -s ${SampleName} -S ${SamtoolsExe} -F ${BashSharedFunctions} ${DebugMode}
+		/bin/bash ${MergeBamScript} -b ${InputBam.join(',')} -s ${SampleName} -S ${SamtoolsExe} -F ${BashSharedFunctions} ${DebugMode}
 		"""
 }
 
