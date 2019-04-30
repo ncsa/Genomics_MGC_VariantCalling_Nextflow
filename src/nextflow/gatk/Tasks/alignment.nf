@@ -2,28 +2,10 @@
 /*                                                                                         */
 /*              This Nextflow script performs alignment using BWA Mem                      */
 /*                                                                                         */
-/*                              Script Options                                             */
-/*       -s        "Name of the sample"                        (Optional)                  */
-/*       -p        "Platform"                                  (Required)                  */
-/*       -L	       "Library"        			               (Required)                  */
-/*       -f        "Flow cell ID/Platform Unit"                (Required)                  */
-/*       -c        "Sequencing Center"                         (Required)                  */
-/*       -P        "Paired Ended Reads specification"          (Required)                  */
-/*       -l        "Left Fastq File"                           (Required)                  */
-/*       -r        "Right Fastq File"                          (Optional)                  */
-/*       -G        "Reference Genome"                          (Required)                  */
-/*       -e        "Path to bwa executable"                    (Required)                  */
-/*       -K        "Chunk Size in Bases"                       (Required)                  */
-/*       -o        "Additional bwa options"                    (Required)                  */
-/*       -S        "Path to samtools executable"               (Required)                  */
-/*       -t        "Number of Threads"                         (Optional)                  */
-/*       -F        "Shared function script"	                   (Required)                  */
-/*       -d        "Debug Mode Specification"                  (Required)                  */
-/*  	 -O 	   "Path to Output Directory" 		           (Required)	        	   */
 /*******************************************************************************************/
 
 /** Nextflow option so bash stdout will be displayed */
-echo false
+echo true
 
 /* *********************         Import input variables       ********************* */
 SampleName = params.SampleName							                // Sample name used for output
@@ -59,11 +41,10 @@ DeliveryFolder_Alignment = params.DeliveryFolder_Alignment
 /* *********************         Prepare input channels       ********************* */
 InputRead1Channel = Channel.fromPath(InputRead1.tokenize(','))
 
-if (InputRead2.contains(',')){
-    InputRead2Channel = Channel.fromPath(InputRead2.tokenize(','))
-} else {
-    InputRead2Channel = InputRead2
-}
+InputRead2Channel = ( PairedEnd == 'true' 
+                      ? Channel.fromPath(InputRead2.tokenize(','))
+                      : file('null').fileName )
+
 
 PlatformUnitChannel = Channel.from(PlatformUnit.tokenize(','))
 
@@ -81,7 +62,7 @@ process Alignment{
         val CenterName
     	val PairedEnd
     	file InputRead1 from InputRead1Channel
-    	val InputRead2 from InputRead2Channel
+    	file InputRead2 from InputRead2Channel
     	file Ref
     	file RefAmb
     	file RefAnn
@@ -103,15 +84,9 @@ process Alignment{
         file "${SampleName}.${PlatformUnit}.bam"  
         file "${SampleName}.${PlatformUnit}.bam.bai" 
 
-	script:
-    	if (PairedEnd == "true")
-    	       """
-               source ${BashPreamble}
-    	       /bin/bash ${AlignmentScript} -s ${SampleName}.${PlatformUnit} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
-    	       """
-    	else
-    	       """
-    	       source ${BashPreamble}
-    	       /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r "null" -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
-    	       """
+    script:
+       	"""
+        source ${BashPreamble}
+        /bin/bash ${AlignmentScript} -s ${SampleName}.${PlatformUnit} -p ${Platform} -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}  ${DebugMode}
+        """
 }
