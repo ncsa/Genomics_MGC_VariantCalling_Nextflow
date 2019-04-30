@@ -19,7 +19,8 @@ BashPreamble = file(params.BashPreamble)                // Script for zombie pro
 BashSharedFunctions = file(params.BashSharedFunctions)  // Script of helpful functions
 
 MergeBamScript = params.MergeBamScript						// Bash script running merge BAMs
-AlignmentOutputDirectory = params.AlignmentOutputDirectory	// Alignment dir (inputs)
+
+DeliveryFolder_Alignment = params.DeliveryFolder_Alignment
 
 /* *********************           Input channels preparation           ********************* */
 
@@ -32,10 +33,15 @@ InputBaisChannel = Channel.fromPath(InputBais.tokenize(',')).collect()
 /* *********************            Start Merge process                ********************* */
 
 process merge {
+    publishDir DeliveryFolder_Alignment, mode: 'copy'
 
 	input:
         val InputBam from InputBamsChannel
         file InputBai from InputBaisChannel
+
+    output:
+        file "${SampleName}.bam" 
+        file "${SampleName}.bam.bai"
 	
 		"""
         source ${BashPreamble}
