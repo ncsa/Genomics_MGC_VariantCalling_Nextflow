@@ -71,7 +71,7 @@ PlatformUnitChannel = Channel.from(PlatformUnit.tokenize(','))
 
 process Alignment{
 
-    publishDir DeliveryFolder_Alignment
+    publishDir DeliveryFolder_Alignment, mode: 'copy'
 
 	input:
     	val SampleName

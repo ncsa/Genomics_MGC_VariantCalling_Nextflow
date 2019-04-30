@@ -1,75 +1,45 @@
-/*******************************************************************************************/
-/*                                                                                         */
-/*              This Nextflow script marks the duplicates on input sorted BAMs             */
-/*                                                                                         */
-/*                              Script Options                                             */
-/*       -b        "Input BAM Files"                           (Required)                  */
-/*       -s        "Name of the sample"                        (Optional)                  */
-/*       -S        "Path to the Sentieon Tool"                 (Required)                  */
-/*       -t        "Number of Threads"                         (Required)                  */
-/*       -e        "Path to Environment Profile File"          (Required)                  */
-/*       -F        "Shared function script"                    (Required)                  */
-/*       -d        "Debug Mode Specification"                  (Required)                  */
-/*******************************************************************************************/
-/** Nextflow option so bash stdout will be displayed */
+/*********************************************************************************************/
+/*                                                                                           */
+/*               This Nextflow script marks the duplicates on input sorted BAMs              */
+/*                                                                                           */
+/*********************************************************************************************/
+
+/* *******************       Nextflow option so bash stdout will be displayed     ********** */
 echo true
 
-/** Import variables */
-MergeScript = params.MergeScript						// Bash script running merge BAMs
-AlignmentOutputDirectory = params.AlignmentOutputDirectory			// Output folder for alignment (file source dir)
+/* *********************         Import input variables                ********************* */
 SampleName = params.SampleName							// Sample name used for output
-Sentieon = params.Sentieon							// Sentieon executable
-SentieonThreads = params.SentieonThreads					// Number of threads for sentieon merge BAMs
-MergeOutputDirectory = params.MergeOutputDirectory				// Output folder for merge (destination dir)
-MergeEnvProfile = params.MergeEnvProfile					// File containing environmental profile variables
-SharedFunctionScript = params.NextflowShellDir  + "/shared_functions.sh"	// Shared function for variable checks
+InputBams = params.InputBams                            // Input Sorted BAM Files
+InputBais = params.InputBais                            // Input Sorted Bam Index Files
+SamtoolsExe = file(params.SamtoolsExe)                  // Path to Samtools Executable
+
 DebugMode = params.DebugMode							// Debug mode
 
-/** Channel Preparation for merge bam files*/
-bamChannel = Channel.fromPath(AlignmentOutputDirectory + "/*.aligned.sorted.bam").collect()
-indexChannel = Channel.fromPath(AlignmentOutputDirectory + "/*.aligned.sorted.bam.bai").collect()
+BashPreamble = file(params.BashPreamble)                // Script for zombie processes
+BashSharedFunctions = file(params.BashSharedFunctions)  // Script of helpful functions
 
+MergeBamScript = params.MergeBamScript						// Bash script running merge BAMs
+AlignmentOutputDirectory = params.AlignmentOutputDirectory	// Alignment dir (inputs)
 
-/** Add flag variable indicating if the samples are multilane */
-InputRead1 = params.InputRead1
-Multilane = false
-if (InputRead1.contains(',')) {
-	Multilane = true
-}
+/* *********************           Input channels preparation           ********************* */
 
+//bamChannel = Channel.fromPath(AlignmentOutputDirectory + "/*.aligned.sorted.bam").collect()
+//indexChannel=Channel.fromPath(AlignmentOutputDirectory+"/*.aligned.sorted.bam.bai").collect()
 
-/** Make lane list for lane information */
-if (Multilane == true) { 
-        InputRead1List = InputRead1.split(',')
-        LaneList = (1..(InputRead1List.size()))
-} else {
-        InputRead1List = InputRead1
-        LaneList = 1
-}
+InputBamsChannel = InputBams 
+InputBaisChannel = Channel.fromPath(InputBais.tokenize(',')).collect()
 
+/* *********************            Start Merge process                ********************* */
 
-/** Start merge */
 process merge {
 
 	input:
-	file bams from bamChannel
-	file indexFiles from indexChannel
-		
-	script:
-	if (Multilane == true)
+        val InputBam from InputBamsChannel
+        file InputBai from InputBaisChannel
+	
 		"""
-		bamSample="${bams}"
-		bamSampleCommaDelim=\${bamSample// /,}
-		/bin/bash ${MergeScript} -b \${bamSampleCommaDelim} -s ${SampleName}.aligned.sorted.merged -S ${Sentieon} -t ${SentieonThreads} -e ${MergeEnvProfile} -F ${SharedFunctionScript} ${DebugMode}
-		mv ${SampleName}.aligned.sorted.merged.bam ${MergeOutputDirectory}
-		mv ${SampleName}.aligned.sorted.merged.bam.bai ${MergeOutputDirectory}
-		mv ${SampleName}.aligned.sorted.merged.merge_bams.TBD.log ${MergeOutputDirectory}
-		mv ${SampleName}.aligned.sorted.merged.merge_bams_sentieon.log ${MergeOutputDirectory}
-		"""
-
-	else 
-		"""
-		echo "Single lane only, nothing to merge"
+        source ${BashPreamble}
+		/bin/bash ${MergeBamScript} -b ${InputBam} -s ${SampleName} -S ${SamtoolsExe} -F ${BashSharedFunctions} ${DebugMode}
 		"""
 }
 
