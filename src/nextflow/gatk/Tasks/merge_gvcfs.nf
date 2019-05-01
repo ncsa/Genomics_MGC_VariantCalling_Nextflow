@@ -32,7 +32,7 @@ InputGvcfsChannel = Channel.from(InputGvcfs.tokenize(',')).flatMap{ files(it) }.
 InputIdxsChannel = Channel.fromPath(InputIdxs.tokenize(',')).collect()
 
 
-/*************************            Start haplotyper            ***********************/
+/*************************            Start Merging Gvcfs         ***********************/
 process Mergegvcfs {
  
    publishDir DeliveryFolder_HaplotyperVC, mode: 'copy' 
