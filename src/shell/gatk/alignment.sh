@@ -269,11 +269,11 @@ checkVarInt "${THR}" "Not integer value for number of threads: -t" $LINENO
 #-------------------------------------------------------------------------------------------------------------------------------
 
 ## Set output file names
-OUTSAM=${SAMPLE}.sam
-OUTBAM=${SAMPLE}-unsorted.bam
-SORTBAM=${SAMPLE}.bam
-SORTBAMIDX=${SAMPLE}.bam.bai
-TOOL_LOG=${SAMPLE}.align_bwa.log
+OUTSAM=${SAMPLE}.${PLATFORM_UNIT}.sam
+OUTBAM=${SAMPLE}.${PLATFORM_UNIT}-unsorted.bam
+SORTBAM=${SAMPLE}.${PLATFORM_UNIT}.bam
+SORTBAMIDX=${SAMPLE}.${PLATFORM_UNIT}.bam.bai
+TOOL_LOG=${SAMPLE}.${PLATFORM_UNIT}.align_bwa.log
 
 ## Parse extra options if specified
 BWA_OPTS_PARSED=`sed -e "s/'//g" <<< ${BWA_OPTS}`
