@@ -33,19 +33,19 @@ read -r -d '' DOCS << DOCS
 
  USAGE:
  jointgenotyping.sh   -b           <sample1.g.vcf[,sample2.g.vcf,...]>
-                      -S           </path/to/gatk/executable>
                       -G           <reference_genome>
                       -D           <dbsnp.vcf>
+                      -I           <genomic_intervals>
+                      -S           </path/to/gatk/executable>
+                      -o           <extra_genotypegvcf_options>
                       -J           </path/to/java8_executable>
                       -e           <java_vm_options>
                       -F           </path/to/shared_functions.sh>
-                      -I           <genomic_intervals>
-                      -o           <extra_genotypegvcf_options>
                       -d           turn on debug mode
 
  EXAMPLES:
  jointgenotyping.sh -h
- jointgenotyping.sh -b sample1.g.vcf,sample2.g.vcf,sample3.g.vcf -S /path/to/gatk/executable -G reference.fa -D dbsnp.vcf -J /path/to/java8_executable -e "'-Xms2G -Xmx8G'" -F /path/to/shared_functions.sh -I chr20 -o "'--sample_ploidy 2 --useNewAFCalculator'" -d
+ jointgenotyping.sh -b sample1.g.vcf,sample2.g.vcf,sample3.g.vcf -G reference.fa -D dbsnp.vcf -I chr20 -S /path/to/gatk/executable -o "'--sample_ploidy 2 --useNewAFCalculator'" -J /path/to/java8_executable -e "'-Xms2G -Xmx8G'" -F /path/to/shared_functions.sh -d
 
  NOTE: In order for getops to read in a string arguments for -e (java_vm_options) or -o (extra_genotypegvcf_options), the argument needs to be quoted with a double quote (") followed by a single quote ('). See the example above.
 #############################################################################
