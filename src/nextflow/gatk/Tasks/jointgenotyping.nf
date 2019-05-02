@@ -39,7 +39,7 @@ InputGvcfsChannel = Channel.from(InputGvcfs.tokenize(',')).flatMap{ files(it) }.
 InputIdxsChannel = Channel.fromPath(InputIdxs.tokenize(',')).collect()
 
 
-/*************************            Start Merging Gvcfs         ***********************/
+/******************            Start Jointly calling from Gvcfs         *****************/
 process JointGenotyping {
  
 
