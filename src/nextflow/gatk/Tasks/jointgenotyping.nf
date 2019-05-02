@@ -18,7 +18,6 @@ Ref = file(params.Ref)                          // Reference genome
 RefFai = file(params.RefFai)                    // Reference files- implicit
 RefDict = file(params.RefDict)                  // to the GATK tool
 DBSNP = file(params.DBSNP)                  // DBSNP file
-DBSNPIdx = file(params.DBSNPIdx)            // Index file for DBSNP file
 GenomicInterval = params.GenomicInterval            // Array of chromosome names or intervals
 
 GATKExe = file(params.GATKExe)                  // Path to GATK4 executable 
@@ -51,7 +50,6 @@ process JointGenotyping {
         file RefFai
         file RefDict
         file DBSNP
-//      file DBSNPIdx
 
         val GenomicInterval
         
