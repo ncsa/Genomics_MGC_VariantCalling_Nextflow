@@ -31,7 +31,7 @@ InputVcfsChannel = Channel.from(InputVcfs.tokenize(',')).flatMap{ files(it) }.co
 InputIdxsChannel = Channel.fromPath(InputIdxs.tokenize(',')).collect()
 
 
-/*************************            Start Merging Vcfs         ***********************/
+/*************************            Start Gathering Vcfs         ***********************/
 process GatherVcfs {
    tag "All_samples_All_intervals"
  
