@@ -8,7 +8,6 @@
 echo false
 
 /* ******************        Import input variables          **************** */
-SampleName = params.SampleName					 // Sample name used for output
 Platform = params.Platform						// Sequencing platform
 Library = params.Library	                    // Library name
 PlatformUnit = params.PlatformUnit              // Platform unit/ flowcell ID
@@ -69,6 +68,10 @@ DeliveryFolder_HaplotyperVC = params.DeliveryFolder_HaplotyperVC
 
 
 /* *********      Alignment: per lane (of a sample) - Required   ************ */
+SampleName = params.SampleName					 // Singl sample name
+PlatformUnitChannel = Channel
+                        .from(PlatformUnit.tokenize(',')) // For each read-pair
+
 InputRead1 = params.InputRead1                              // Input Read File
 InputRead2 = params.InputRead2                               // Input Read File
 InputRead1Channel = Channel.fromPath(InputRead1.tokenize(','))
@@ -77,238 +80,231 @@ InputRead2Channel = ( PairedEnd == 'true'
                       ? Channel.fromPath(InputRead2.tokenize(','))
                       : file('null').fileName )
 
-PlatformUnitChannel = Channel.from(PlatformUnit.tokenize(','))
-
 process Alignment{
+  tag "${SampleName}_${PlatformUnit}"
 
-    publishDir DeliveryFolder_Alignment, mode: 'copy'
+  // publishDir DeliveryFolder_Alignment , mode: 'copy'
 
 	input:
-    	val SampleName
-    	val Platform
-        val Library
-        val PlatformUnit from PlatformUnitChannel
-        val CenterName
-    	val PairedEnd
-    	file InputRead1 from InputRead1Channel
-    	file InputRead2 from InputRead2Channel
-    	file Ref
-    	file RefAmb
-    	file RefAnn
-    	file RefBwt
-    	file RefPac
-    	file RefSa
-        file BWAExe
-    	val ChunkSizeInBases
-        val BWAExtraOptionsString
-        file SamtoolsExe
-    	val BwaSamtoolsThreads
-        file BashSharedFunctions
-     	val DebugMode
+  	val SampleName
+  	val Platform
+    val Library
+    val PlatformUnit from PlatformUnitChannel
+    val CenterName
+  	val PairedEnd
+  	file InputRead1 from InputRead1Channel
+  	file InputRead2 from InputRead2Channel
+  	file Ref
+  	file RefAmb
+  	file RefAnn
+  	file RefBwt
+  	file RefPac
+  	file RefSa
+    file BWAExe
+  	val ChunkSizeInBases
+    val BWAExtraOptionsString
+    file SamtoolsExe
+  	val BwaSamtoolsThreads
+    file BashSharedFunctions
+   	val DebugMode
 
-        file BashPreamble
-    	file AlignmentScript
+    file BashPreamble
+  	file AlignmentScript
 
-    output:
-        file "${SampleName}.${PlatformUnit}.bam" into AlignOutputBams
-        file "${SampleName}.${PlatformUnit}.bam.bai" into AlignOutputBais
+  output:
+      set SampleName, "${SampleName}.${PlatformUnit}.bam",
+              "${SampleName}.${PlatformUnit}.bam.bai" into AlignOutput
 
-    script:
-       	"""
-        source ${BashPreamble}
-        /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} \
-            -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} \
-            -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} \
-            -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" \
-            -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}\
-            ${DebugMode}
-        """
+  script:
+     	"""
+      source ${BashPreamble}
+      /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} \
+          -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} \
+          -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} \
+          -K ${ChunkSizeInBases} -o \"\'${BWAExtraOptionsString}\'\" \
+          -S ${SamtoolsExe} -t ${BwaSamtoolsThreads} -F ${BashSharedFunctions}\
+          ${DebugMode}
+      """
 }
 
 /* ***********    Merge: all lanes (of a sample) - Required      ************ */
 
 process MergeBams {
-    publishDir DeliveryFolder_Alignment, mode: 'copy'
+  tag "${SampleName}_All_lanes"
+
+  publishDir DeliveryFolder_Alignment, mode: 'copy'
 
 	input:
-        file InputBam from AlignOutputBams.collect()    // Link to Alignment
-        file InputBai from AlignOutputBais.collect()    // Link to Alignment
+      set SampleName, file(InputBam), file(InputBai) from AlignOutput.groupTuple()    // Link to Alignment
 
-    output:
-        file "${SampleName}.bam" into MergeOutputBams
-        file "${SampleName}.bam.bai" into MergeOutputBais
+  output:
+      set SampleName, "${SampleName}.bam",
+          "${SampleName}.bam.bai" into MergeBamsOutputToDedup, MergeBamsOutputToBqsr
 
 		"""
-        source ${BashPreamble}
+      source ${BashPreamble}
 		/bin/bash ${MergeBamScript} -b ${InputBam.join(',')} -s ${SampleName} \
-            -S ${SamtoolsExe} \
-            -F ${BashSharedFunctions} ${DebugMode}
+          -S ${SamtoolsExe} \
+          -F ${BashSharedFunctions} ${DebugMode}
 		"""
 }
 
 /*****************         Dedup: per sample - Optional           *************/
 process Deduplication{
-   input:
-       val SampleName
+ tag "${SampleName}_All_intervals"
 
-       file InputBams from  MergeOutputBams // Link to MergeBams
-       file InputBais from MergeOutputBais  // Link to MergeBams
+ publishDir DeliveryFolder_Alignment, mode: 'overwrite'
 
-       file GATKExe
-       file JavaExe
-       val JavaOptionsString
+ input:
+     set SampleName,
+         file(InputBams), file(InputBais) from MergeBamsOutputToDedup.groupTuple()  // Link to MergeBams
 
-       val DebugMode
+     file GATKExe
+     file JavaExe
+     val JavaOptionsString
 
-       file BashPreamble
-       file BashSharedFunctions
+     val DebugMode
 
-       file DedupScript
+     file BashPreamble
+     file BashSharedFunctions
 
-   output:
-       file "${SampleName}.bam" into DedupOutputBams
-       file "${SampleName}.bam.bai" into DedupOutputBais
+     file DedupScript
 
-   when:
-       params.MarkDuplicates == 'true'
+ output:
+     set SampleName, "${SampleName}.bam", "${SampleName}.bam.bai" into DedupOutput
 
-   script:
-       """
-       source ${BashPreamble}
-       /bin/bash ${DedupScript} -s ${SampleName} -b ${InputBams} -S ${GATKExe} \
-            -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
-            -F ${BashSharedFunctions} {DebugMode}
-       """
+ when:
+     params.MarkDuplicates == 'true'
+
+ script:
+     """
+     source ${BashPreamble}
+     /bin/bash ${DedupScript} -s ${SampleName} -b ${InputBams} -S ${GATKExe} \
+          -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
+          -F ${BashSharedFunctions} {DebugMode}
+     """
 }
 
 /*********       BQSR: per interval (of a sample) - Required        ***********/
 
 Channel                                         // Chromosome names/intervals
-    .from(params.GenomicIntervals.tokenize(','))
-    .into{BqsrGenomicIntervals; HcGenomicIntervals}
+  .from(params.GenomicIntervals.tokenize(','))
+  .into{BqsrGenomicIntervals; HCGenomicIntervals; JointCallIntervals}
 
-BQSRInputBams = (params.MarkDuplicates == 'true' // Link MergeBams or
-                ? DedupOutputBams : MergeOutputBams) // Deduplication
-BQSRInputBais = (params.MarkDuplicates == 'true'
-                ? DedupOutputBais : MergeOutputBais)
+BQSRInput = (params.MarkDuplicates == 'true'
+           ? DedupOutput : MergeBamsOutputToBqsr) // Link MergeBams or Deduplication
 
 process BQSR{
+ tag "${SampleName}_${GenomicInterval}"
 
-   publishDir DeliveryFolder_Alignment, mode: 'copy'
+ input:
+      set SampleName, file (InputBams), file (InputBais) from BQSRInput
 
-   input:
-        val SampleName
-    	file InputBams from BQSRInputBams
-	    file InputBais from BQSRInputBais
+  	file Ref
+    	file RefFai
+      file RefDict
 
-    	file Ref
-      	file RefFai
-        file RefDict
+  	file BqsrKnownSites from BqsrKnownSitesChannel
+  	file BqsrKnownSitesIdx from BqsrKnownSitesIdxChannel
 
-    	file BqsrKnownSites from BqsrKnownSitesChannel
-    	file BqsrKnownSitesIdx from BqsrKnownSitesIdxChannel
+      each GenomicInterval from BqsrGenomicIntervals
+      file GATKExe
+      val ApplyBQSRExtraOptionsString
+      file JavaExe
+      val JavaOptionsString
 
-        val GenomicInterval from BqsrGenomicIntervals
-        file GATKExe
-        val ApplyBQSRExtraOptionsString
-        file JavaExe
-        val JavaOptionsString
+      file BashPreamble
+      file BashSharedFunctions
+      file BqsrScript
 
-        file BashPreamble
-        file BashSharedFunctions
-        file BqsrScript
+ output:
+      set SampleName, "${SampleName}.${GenomicInterval}.bam" ,
+           "${SampleName}.${GenomicInterval}.bai" into BqsrOutput
 
-   output:
-        file "${SampleName}.${GenomicInterval}.bam" into BqsrOutputBams
-        file "${SampleName}.${GenomicInterval}.bai" into BqsrOutputBais
-
-   script:
-       """
-        source ${BashPreamble}
-       /bin/bash ${BqsrScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
-         -k ${BqsrKnownSites.join(',')} -I ${GenomicInterval} -S ${GATKExe} \
-         -o \"\'${ApplyBQSRExtraOptionsString}\'\" -J ${JavaExe} \
-         -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} ${DebugMode}
-       """
+ script:
+     """
+     source ${BashPreamble}
+     /bin/bash ${BqsrScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
+       -k ${BqsrKnownSites.join(',')} -I ${GenomicInterval} -S ${GATKExe} \
+       -o \"\'${ApplyBQSRExtraOptionsString}\'\" -J ${JavaExe} \
+       -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} ${DebugMode}
+     """
 }
+
 
 /********      haplotyper: per interval (of a sample) - Required      *********/
 
 process Haplotyper{
+ tag "${SampleName}_${GenomicInterval}"
 
-   publishDir DeliveryFolder_HaplotyperVC, mode: 'copy'
+ input:
+  	set SampleName,	file (InputBams), file (InputBais) from BqsrOutput // Link to BQSR
 
-   input:
-    	val SampleName
-
-    	file InputBams from BqsrOutputBams // Link to BQSR
-	    file InputBais from BqsrOutputBais // Link to BQSR
-    	file Ref
+  	file Ref
 	    file RefFai
-        file RefDict
+      file RefDict
 
-    	file DBSNP
+  	file DBSNP
 	    file DBSNPIdx
-	    val GenomicInterval from HcGenomicIntervals
+	    each GenomicInterval from HCGenomicIntervals
 
-        file GATKExe
-        val HaplotyperThreads
-        val HaplotyperExtraOptionsString
-        file JavaExe
-        val JavaOptionsString
+      file GATKExe
+      val HaplotyperThreads
+      val HaplotyperExtraOptionsString
+      file JavaExe
+      val JavaOptionsString
 
-        file BashPreamble
-        file BashSharedFunctions
-        file HaplotyperScript
+      file BashPreamble
+      file BashSharedFunctions
+      file HaplotyperScript
 
 	    val DebugMode
 
-   output:
-        file "${SampleName}.${GenomicInterval}.g.vcf" into HcOutputVcf
-        file "${SampleName}.${GenomicInterval}.g.vcf.idx" into HcOutputVcfIdx
+ output:
+      set SampleName, "${SampleName}.${GenomicInterval}.g.vcf" ,
+          "${SampleName}.${GenomicInterval}.g.vcf.idx" into HCOutput
 
-   script:
-       """
-       source ${BashPreamble}
-       /bin/bash ${HaplotyperScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
-            -D ${DBSNP} -I ${GenomicInterval} -S ${GATKExe} \
-            -t ${HaplotyperThreads} -o \"\'${HaplotyperExtraOptionsString}\'\" \
-            -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions}\
-             ${DebugMode}
-       """
+ script:
+     """
+     source ${BashPreamble}
+     /bin/bash ${HaplotyperScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
+          -D ${DBSNP} -I ${GenomicInterval} -S ${GATKExe} \
+          -t ${HaplotyperThreads} -o \"\'${HaplotyperExtraOptionsString}\'\" \
+          -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions}\
+           ${DebugMode}
+     """
 }
+
 
 /********      Merge Gvcfs: all intervals (of a sample) - Required    *********/
 
-process Mergegvcfs {
+process MergeGvcfs {
+ tag "${SampleName}_All_intervals"
 
-   publishDir DeliveryFolder_HaplotyperVC, mode: 'copy'
+ publishDir DeliveryFolder_HaplotyperVC, mode: 'copy'
 
-   input:
-    	val SampleName
+ input:
+  	set SampleName, file(InputGvcfs), file(InputIdxs) from HCOutput.groupTuple()  //Link to Haplotyper
 
-        file InputGvcfs from HcOutputVcf.collect()  // Link to Haplotyper
-        file InputIdxs from HcOutputVcfIdx.collect()  //Link to Haplotyper
+      file GATKExe
+      file JavaExe
+      val JavaOptionsString
 
-        file GATKExe
-        file JavaExe
-        val JavaOptionsString
-
-        file BashPreamble
-        file BashSharedFunctions
-        file MergeGvcfsScript
+      file BashPreamble
+      file BashSharedFunctions
+      file MergeGvcfsScript
 
 	    val DebugMode
 
-   output:
-        file "${SampleName}.g.vcf" into OutputVcf
-        file "${SampleName}.g.vcf.idx" into OutputVcfIdx
+ output:
+       file "${SampleName}.g.vcf" into MergeGvcfsOutput
+       file "${SampleName}.g.vcf.idx" into MergeGvcfsIdx
 
-   script:
-       """
-       source ${BashPreamble}
-       /bin/bash ${MergeGvcfsScript} -s ${SampleName} -b ${InputGvcfs.join(',')} \
-        -S ${GATKExe} -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
-        -F ${BashSharedFunctions} ${DebugMode}
-       """
+ script:
+     """
+     source ${BashPreamble}
+     /bin/bash ${MergeGvcfsScript} -s ${SampleName} -b ${InputGvcfs.join(',')}\
+      -S ${GATKExe} -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
+      -F ${BashSharedFunctions} ${DebugMode}
+     """
 }
