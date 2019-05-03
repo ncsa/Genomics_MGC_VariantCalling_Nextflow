@@ -33,14 +33,14 @@ read -r -d '' DOCS << DOCS
  USAGE:
  gathervcfs.sh        -b           <chr1.vcf[,chr2.vcf,...]>
                       -S           </path/to/gatk/executable>
-                      -F           </path/to/shared_functions.sh>
                       -J           </path/to/java8_executable>
                       -e           <java_vm_options>
+                      -F           </path/to/shared_functions.sh>
                       -d           turn on debug mode
 
  EXAMPLES:
  gathervcfs.sh -h
- gathervcfs.sh -b chr1.vcf,chr2.vcf,chr3.vcf -S /path/to/gatk/executable -F /path/to/shared_functions.sh -J /path/to/java8_executable -e "'-Xms2G -Xmx8G'" -d
+ gathervcfs.sh -b chr1.vcf,chr2.vcf,chr3.vcf -S /path/to/gatk/executable -J /path/to/java8_executable -e "'-Xms2G -Xmx8G'" -F /path/to/shared_functions.sh -d
 
  NOTE: In order for getops to read in a string arguments for -e (java_vm_options), the argument needs to be quoted with a double quote (") followed by a single quote ('). See the example above.
 
