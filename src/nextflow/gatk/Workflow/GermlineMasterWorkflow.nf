@@ -117,7 +117,7 @@ process Alignment{
 
   script:
      	"""
-      source ${BashPreamble}
+      
       /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} \
           -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} \
           -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} \
@@ -142,7 +142,7 @@ process MergeBams {
           "${SampleName}.bam.bai" into MergeBamsOutputToDedup, MergeBamsOutputToBqsr
 
 		"""
-      source ${BashPreamble}
+      
 		/bin/bash ${MergeBamScript} -b ${InputBam.join(',')} -s ${SampleName} \
           -S ${SamtoolsExe} \
           -F ${BashSharedFunctions} ${DebugMode}
@@ -178,7 +178,7 @@ process Deduplication{
 
  script:
      """
-     source ${BashPreamble}
+     
      /bin/bash ${DedupScript} -s ${SampleName} -b ${InputBams} -S ${GATKExe} \
           -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
           -F ${BashSharedFunctions} {DebugMode}
@@ -223,7 +223,7 @@ process BQSR{
 
  script:
      """
-     source ${BashPreamble}
+     
      /bin/bash ${BqsrScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
        -k ${BqsrKnownSites.join(',')} -I ${GenomicInterval} -S ${GATKExe} \
        -o \"\'${ApplyBQSRExtraOptionsString}\'\" -J ${JavaExe} \
@@ -266,7 +266,7 @@ process Haplotyper{
 
  script:
      """
-     source ${BashPreamble}
+     
      /bin/bash ${HaplotyperScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
           -D ${DBSNP} -I ${GenomicInterval} -S ${GATKExe} \
           -t ${HaplotyperThreads} -o \"\'${HaplotyperExtraOptionsString}\'\" \
@@ -302,7 +302,7 @@ process MergeGvcfs {
 
  script:
      """
-     source ${BashPreamble}
+     
      /bin/bash ${MergeGvcfsScript} -s ${SampleName} -b ${InputGvcfs.join(',')}\
       -S ${GATKExe} -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
       -F ${BashSharedFunctions} ${DebugMode}
