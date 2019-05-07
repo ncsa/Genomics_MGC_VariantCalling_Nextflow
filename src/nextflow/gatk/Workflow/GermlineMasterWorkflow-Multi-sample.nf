@@ -48,7 +48,7 @@ BashSharedFunctions = file(params.BashSharedFunctions)	// For variable checks
 DebugMode = params.DebugMode					// Flag to enable debug mode
 
 AlignmentScript = file(params.AlignmentScript)	// script running alignment
-MergeBamScript = params.MergeBamScript			// script running merge BAMs
+MergeBamScript = file(params.MergeBamScript)			// script running merge BAMs
 DedupScript = file(params.DedupScript)          // script running deduplication
 BqsrScript = file(params.BqsrScript)            // script of the bqsr job
 HaplotyperScript = file(params.HaplotyperScript) // script of GATK code
@@ -137,6 +137,13 @@ process MergeBams {
 
 	input:
         set SampleName, file(InputBam), file(InputBai) from AlignOutput.groupTuple()    // Link to Alignment
+        file SamtoolsExe
+        file BashSharedFunctions
+        val DebugMode
+
+        file BashPreamble
+        file MergeBamScript
+
 
     output:
         set SampleName, "${SampleName}.bam", "${SampleName}.bam.bai" into MergeBamsOutput1, MergeBamsOutput2
