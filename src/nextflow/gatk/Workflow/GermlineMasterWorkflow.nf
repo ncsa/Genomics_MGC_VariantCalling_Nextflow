@@ -161,14 +161,14 @@ process MergeBams {
 process Deduplication{
  tag "${SampleName}_All_intervals"
 
- publishDir DeliveryFolder_Alignment, mode: 'overwrite'
+ publishDir DeliveryFolder_Alignment, mode: 'copy', overwrite: true
 
  input:
      set SampleName,
          file(InputBams), file(InputBais) from MergeBamsOutputToDedup.groupTuple()  // Link to MergeBams
 
      file GATKExe
-     file JavaExe
+     val JavaExe
      val JavaOptionsString
 
      val DebugMode

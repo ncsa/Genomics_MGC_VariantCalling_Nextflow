@@ -170,7 +170,7 @@ function checkFile()
 #pass in the reason as the second parameter
 function checkFileExe()
 {
-    if [[ ! ( -f $1 && -x $1 ) ]]
+    if [[ ! ( -f $1 && -x  $(realpath $1) ) ]]
 	then
         	EXITCODE=1
         	logError "$0 stopped at line $3. \nREASON=$2"
