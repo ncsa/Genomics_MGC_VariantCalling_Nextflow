@@ -210,7 +210,7 @@ process BQSR{
 
   	file Ref
     	file RefFai
-      file RefDict
+        file RefDict
 
   	file BqsrKnownSites from BqsrKnownSitesChannel
   	file BqsrKnownSitesIdx from BqsrKnownSitesIdxChannel
@@ -254,7 +254,7 @@ process Haplotyper{
 
   	file DBSNP
 	    file DBSNPIdx
-	    each GenomicInterval from HCGenomicIntervals
+	    val GenomicInterval from HCGenomicIntervals
 
       file GATKExe
       val HaplotyperThreads
@@ -278,7 +278,7 @@ process Haplotyper{
      /bin/bash ${HaplotyperScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
           -D ${DBSNP} -I ${GenomicInterval} -S ${GATKExe} \
           -t ${HaplotyperThreads} -o \"\'${HaplotyperExtraOptionsString}\'\" \
-          -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions}\
+          -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" -F ${BashSharedFunctions} \
            ${DebugMode}
      """
 }
