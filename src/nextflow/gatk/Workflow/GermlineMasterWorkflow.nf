@@ -197,7 +197,7 @@ process Deduplication{
 
 Channel                                         // Chromosome names/intervals
   .from(params.GenomicIntervals.tokenize(','))
-  .into{BqsrGenomicIntervals; HCGenomicIntervals; JointCallIntervals}
+  .into{BqsrGenomicIntervals; JointCallIntervals}
 
 BQSRInput = (params.MarkDuplicates == 'true'
            ? DedupOutput : MergeBamsOutputToBqsr) // Link MergeBams or Deduplication
@@ -226,7 +226,7 @@ process BQSR{
       file BqsrScript
 
  output:
-      set SampleName, "${SampleName}.${GenomicInterval}.bam" ,
+      set SampleName, GenomicInterval, "${SampleName}.${GenomicInterval}.bam" ,
            "${SampleName}.${GenomicInterval}.bai" into BqsrOutput
 
  script:
@@ -246,7 +246,7 @@ process Haplotyper{
  tag "${SampleName}_${GenomicInterval}"
 
  input:
-  	set SampleName,	file (InputBams), file (InputBais) from BqsrOutput // Link to BQSR
+  	set SampleName,	GenomicInterval, file (InputBams), file (InputBais) from BqsrOutput // Link to BQSR
 
   	file Ref
 	    file RefFai
@@ -254,7 +254,6 @@ process Haplotyper{
 
   	file DBSNP
 	    file DBSNPIdx
-	    val GenomicInterval from HCGenomicIntervals
 
       file GATKExe
       val HaplotyperThreads
