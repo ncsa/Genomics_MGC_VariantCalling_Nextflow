@@ -100,10 +100,10 @@ process Alignment{
   	file RefBwt
   	file RefPac
   	file RefSa
-    file BWAExe
+    val BWAExe
   	val ChunkSizeInBases
     val BWAExtraOptionsString
-    file SamtoolsExe
+    val SamtoolsExe
   	val BwaSamtoolsThreads
     file BashSharedFunctions
    	val DebugMode
@@ -136,7 +136,7 @@ process MergeBams {
 
 	input:
       set SampleName, file(InputBam), file(InputBai) from AlignOutput.groupTuple()    // Link to Alignment
-      file SamtoolsExe
+      val SamtoolsExe
       file BashSharedFunctions
       val DebugMode
 
@@ -167,7 +167,7 @@ process Deduplication{
      set SampleName,
          file(InputBams), file(InputBais) from MergeBamsOutputToDedup.groupTuple()  // Link to MergeBams
 
-     file GATKExe
+     val GATKExe
      val JavaExe
      val JavaOptionsString
 
@@ -216,9 +216,9 @@ process BQSR{
   	file BqsrKnownSitesIdx from BqsrKnownSitesIdxChannel
 
       each GenomicInterval from BqsrGenomicIntervals
-      file GATKExe
+      val GATKExe
       val ApplyBQSRExtraOptionsString
-      file JavaExe
+      val JavaExe
       val JavaOptionsString
 
       file BashPreamble
@@ -255,10 +255,10 @@ process Haplotyper{
   	file DBSNP
 	    file DBSNPIdx
 
-      file GATKExe
+      val GATKExe
       val HaplotyperThreads
       val HaplotyperExtraOptionsString
-      file JavaExe
+      val JavaExe
       val JavaOptionsString
 
       file BashPreamble
@@ -293,8 +293,8 @@ process MergeGvcfs {
  input:
   	set SampleName, file(InputGvcfs), file(InputIdxs) from HCOutput.groupTuple()  //Link to Haplotyper
 
-      file GATKExe
-      file JavaExe
+      val GATKExe
+      val JavaExe
       val JavaOptionsString
 
       file BashPreamble
