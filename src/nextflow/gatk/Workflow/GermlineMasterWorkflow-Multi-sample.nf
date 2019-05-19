@@ -118,7 +118,7 @@ process Alignment{
 
     script:
        	"""
-        source ${BashPreamble}
+        #source ${BashPreamble}
         /bin/bash ${AlignmentScript} -s ${SampleName} -p ${Platform} \
             -L ${Library} -f ${PlatformUnit} -c ${CenterName} -P ${PairedEnd} \
             -l ${InputRead1} -r ${InputRead2} -G ${Ref} -e ${BWAExe} \
@@ -149,7 +149,7 @@ process MergeBams {
         set SampleName, "${SampleName}.bam", "${SampleName}.bam.bai" into MergeBamsOutput1, MergeBamsOutput2
 
 		"""
-        source ${BashPreamble}
+        #source ${BashPreamble}
 		/bin/bash ${MergeBamScript} -b ${InputBam.join(',')} -s ${SampleName} \
             -S ${SamtoolsExe} \
             -F ${BashSharedFunctions} ${DebugMode}
@@ -184,7 +184,7 @@ process Deduplication{
 
    script:
        """
-       source ${BashPreamble}
+       #source ${BashPreamble}
        /bin/bash ${DedupScript} -s ${SampleName} -b ${InputBams} -S ${GATKExe} \
             -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
             -F ${BashSharedFunctions} {DebugMode}
@@ -195,7 +195,7 @@ process Deduplication{
 
 Channel                                         // Chromosome names/intervals
     .from(params.GenomicIntervals.tokenize(','))
-    .into{BqsrGenomicIntervals; HCGenomicIntervals; JointCallIntervals}
+    .into{BqsrGenomicIntervals; JointCallIntervals}
 
 BQSRInput = (params.MarkDuplicates == 'true'
              ? DedupOutput : MergeBamsOutput2) // Link MergeBams or Deduplication
@@ -224,12 +224,12 @@ process BQSR{
         file BqsrScript
 
    output:
-        set SampleName, "${SampleName}.${GenomicInterval}.bam" ,
-             "${SampleName}.${GenomicInterval}.bai" into BqsrOutput
+        set SampleName, GenomicInterval, "${SampleName}.${GenomicInterval}.bam" ,
+	            "${SampleName}.${GenomicInterval}.bai" into BqsrOutput
 
    script:
        """
-       source ${BashPreamble}
+       #source ${BashPreamble}
        /bin/bash ${BqsrScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
          -k ${BqsrKnownSites.join(',')} -I ${GenomicInterval} -S ${GATKExe} \
          -o \"\'${ApplyBQSRExtraOptionsString}\'\" -J ${JavaExe} \
@@ -244,7 +244,7 @@ process Haplotyper{
    tag "${SampleName}_${GenomicInterval}"
 
    input:
-    	set SampleName,	file (InputBams), file (InputBais) from BqsrOutput // Link to BQSR
+       set SampleName, GenomicInterval, file (InputBams), file (InputBais) from BqsrOutput // Link to BQSR 
 
     	file Ref
 	    file RefFai
@@ -252,7 +252,6 @@ process Haplotyper{
 
     	file DBSNP
 	    file DBSNPIdx
-	    each GenomicInterval from HCGenomicIntervals
 
         file GATKExe
         val HaplotyperThreads
@@ -272,7 +271,7 @@ process Haplotyper{
 
    script:
        """
-       source ${BashPreamble}
+       #source ${BashPreamble}
        /bin/bash ${HaplotyperScript} -s ${SampleName} -b ${InputBams} -G ${Ref} \
             -D ${DBSNP} -I ${GenomicInterval} -S ${GATKExe} \
             -t ${HaplotyperThreads} -o \"\'${HaplotyperExtraOptionsString}\'\" \
@@ -308,7 +307,7 @@ process MergeGvcfs {
 
    script:
        """
-       source ${BashPreamble}
+       #source ${BashPreamble}
        /bin/bash ${MergeGvcfsScript} -s ${SampleName} -b ${InputGvcfs.join(',')}\
         -S ${GATKExe} -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
         -F ${BashSharedFunctions} ${DebugMode}
@@ -345,12 +344,12 @@ process JointGenotyping {
 	    val DebugMode
 
    output:
-        file "${GenomicInterval}.vcf" into JointGenotypingOutputVcf
+        set GenomicInterval, "${GenomicInterval}.vcf" into JointGenotypingOutputVcf
         file "${GenomicInterval}.vcf.idx" into JointGenotypingOutputVcfIdx
 
    script:
        """
-       source ${BashPreamble}
+       #source ${BashPreamble}
        /bin/bash ${JointGenotypingScript} -b ${InputGvcfs.join(',')} -G ${Ref} \
         -D ${DBSNP} -I ${GenomicInterval} -S ${GATKExe} \
         -o \"\'${GenotypeGVCFsExtraOptionsString}\'\" -J ${JavaExe} \
@@ -359,13 +358,19 @@ process JointGenotyping {
 }
 
 /*********        GatherVcfs: all intervals (all samples) - Required     ******/
+
+JointGenotypingOutputVcf				//Order by genomic interval
+    .toSortedList { entry -> entry[0] }
+    .map { allPairs -> allPairs.collect{ interval, file -> file } }
+    .set { OrderedJointGenotypingOutputVcf } 
+
 process GatherVcfs {
    tag "All_samples_All_intervals"
 
    publishDir DeliveryFolder_HaplotyperVC, mode: 'copy'
 
    input:
-        file InputVcfs from JointGenotypingOutputVcf.collect()  // Link to joint
+        file InputVcfs from OrderedJointGenotypingOutputVcf  // Link to joint
         file InputIdxs from JointGenotypingOutputVcfIdx.collect() // Genotyping
 
         file GATKExe
@@ -383,7 +388,8 @@ process GatherVcfs {
 
    script:
        """
-       source ${BashPreamble}
+       echo ${InputVcfs.join(',')}
+       #source ${BashPreamble}
        /bin/bash ${GatherVcfsScript} -b ${InputVcfs.join(',')} -S ${GATKExe} \
             -J ${JavaExe} -e \"\'${JavaOptionsString}\'\" \
             -F ${BashSharedFunctions} ${DebugMode}
