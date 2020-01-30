@@ -1,7 +1,7 @@
 The branch runs the nextflow pipeline with GATK bash scripts (instead of Sentieon). This is based off Dave's `newer_workflow_Dave` branch. Bash code comes from the WDL repo
 
 
-# Haplotype Variant Calling with Sentieon on Nextflow
+# Haplotype Variant Calling with GATK4 on Nextflow
 This repo is a variant calling pipeline that uses GATK4 in [Nextflow](https://www.nextflow.io/) workflow management language, for use in detecting single nucleotide polymorphisms (SNP) and short insertion deletion variants. It is a Nextflow-based implementation of [Cromwell-WDL based MayomicsVC workflow](https://github.com/ncsa/MayomicsVC).
 
 
